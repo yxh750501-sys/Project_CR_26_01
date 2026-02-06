@@ -41,9 +41,7 @@ public class UsrMemberController {
                           HttpSession session) {
 
         User u = userService.login(loginId, loginPw);
-        if (u == null) {
-            return "redirect:/usr/member/login?error=1";
-        }
+        if (u == null) return "redirect:/usr/member/login?error=1";
 
         session.setAttribute("loginedUserId", u.getId());
         session.setAttribute("loginedUserRole", u.getRole());

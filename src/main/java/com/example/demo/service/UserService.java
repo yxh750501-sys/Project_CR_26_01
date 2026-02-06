@@ -26,7 +26,7 @@ public class UserService {
 
         User u = new User();
         u.setLoginId(loginId.trim());
-        u.setLoginPw(encoder.encode(loginPw));
+        u.setLoginPw(encoder.encode(loginPw)); // BCrypt 저장
         u.setRole((role == null || role.isBlank()) ? "GUARDIAN" : role);
 
         userMapper.insert(u);
@@ -37,7 +37,6 @@ public class UserService {
         if (u == null) return null;
 
         if (!encoder.matches(loginPw, u.getLoginPw())) return null;
-
         return u;
     }
 }

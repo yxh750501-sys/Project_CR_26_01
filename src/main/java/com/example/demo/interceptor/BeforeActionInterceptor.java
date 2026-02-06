@@ -9,15 +9,11 @@ import org.springframework.web.servlet.HandlerInterceptor;
 
 @Component
 public class BeforeActionInterceptor implements HandlerInterceptor {
-
     @Override
     public boolean preHandle(HttpServletRequest req, HttpServletResponse resp, Object handler) throws Exception {
         HttpSession session = req.getSession();
-
         boolean isLogined = session.getAttribute("loginedUserId") != null;
-
         req.setAttribute("isLogined", isLogined);
-
         return true;
     }
 }

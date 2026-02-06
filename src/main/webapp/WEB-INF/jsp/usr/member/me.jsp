@@ -13,8 +13,11 @@
 <div>로그인 userId: <b><%= uid %></b></div>
 <div>role: <b><%= role %></b></div>
 
+<p><a href="/usr/child/list">아이 프로필 관리</a></p>
+
 <form method="post" action="/usr/member/doLogout">
   <button type="submit">로그아웃</button>
 </form>
+
 </body>
 </html>

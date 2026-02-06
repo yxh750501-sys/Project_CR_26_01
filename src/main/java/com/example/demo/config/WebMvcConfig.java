@@ -26,11 +26,9 @@ public class WebMvcConfig implements WebMvcConfigurer {
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
 
-        // 1) 공통 처리: 전체
         registry.addInterceptor(beforeActionInterceptor)
                 .addPathPatterns("/**");
 
-        // 2) 로그인 필요: /usr/** 전부(단, 로그인/회원가입 관련은 제외)
         registry.addInterceptor(needLoginInterceptor)
                 .addPathPatterns("/usr/**")
                 .excludePathPatterns(
@@ -40,7 +38,6 @@ public class WebMvcConfig implements WebMvcConfigurer {
                         "/usr/member/doJoin"
                 );
 
-        // 3) 로그아웃 필요: 로그인/회원가입 화면/처리
         registry.addInterceptor(needLogoutInterceptor)
                 .addPathPatterns(
                         "/usr/member/login",

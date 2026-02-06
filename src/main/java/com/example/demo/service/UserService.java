@@ -26,7 +26,7 @@ public class UserService {
 
         User u = new User();
         u.setLoginId(loginId.trim());
-        u.setLoginPw(encoder.encode(loginPw)); // BCrypt 해시 저장
+        u.setLoginPw(encoder.encode(loginPw));
         u.setRole((role == null || role.isBlank()) ? "GUARDIAN" : role);
 
         userMapper.insert(u);

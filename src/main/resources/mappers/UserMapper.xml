@@ -15,4 +15,15 @@
     WHERE login_id = #{loginId}
   </select>
 
+  <select id="countByLoginId" parameterType="string" resultType="int">
+    SELECT COUNT(*)
+    FROM users
+    WHERE login_id = #{loginId}
+  </select>
+
+  <insert id="insert" parameterType="com.example.demo.vo.User">
+    INSERT INTO users(login_id, login_pw, role)
+    VALUES(#{loginId}, #{loginPw}, #{role})
+  </insert>
+
 </mapper>

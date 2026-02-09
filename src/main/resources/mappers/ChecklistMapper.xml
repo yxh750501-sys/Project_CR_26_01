@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.demo.repository.ChecklistMapper">
+
+  <select id="getChecklists" resultType="com.example.demo.vo.Checklist">
+    SELECT
+      id, code, title, description, reg_date, update_date
+    FROM checklists
+    ORDER BY id DESC
+  </select>
+
+  <select id="getChecklistById" resultType="com.example.demo.vo.Checklist">
+    SELECT
+      id, code, title, description, reg_date, update_date
+    FROM checklists
+    WHERE id = #{id}
+  </select>
+
+  <select id="getQuestionsByChecklistId" resultType="com.example.demo.vo.ChecklistQuestion">
+    SELECT
+      id,
+      checklist_id,
+      code,
+      question_text,
+      help_text,
+      response_type,
+      options_json,
+      weight,
+      sort_order,
+      reg_date,
+      update_date
+    FROM checklist_questions
+    WHERE checklist_id = #{checklistId}
+    ORDER BY sort_order ASC, id ASC
+  </select>
+
+  <insert id="insertRun">
+    INSERT INTO checklist_runs
+      (checklist_id, child_id, user_id, status, total_score, reg_date, update_date)
+    VALUES
+      (#{checklistId}, #{childId}, #{userId}, 'DRAFT', 0, NOW(), NOW())
+  </insert>
+
+  <select id="getLastInsertId" resultType="long">
+    SELECT LAST_INSERT_ID()
+  </select>
+
+  <select id="getRunByIdAndUserId" resultType="com.example.demo.vo.ChecklistRun">
+    SELECT
+      id,
+      checklist_id,
+      child_id,
+      user_id,
+      status,
+      total_score,
+      submitted_date,
+      reg_date,
+      update_date
+    FROM checklist_runs
+    WHERE id = #{id}
+      AND user_id = #{userId}
+  </select>
+
+  <select id="getAnswersByRunId" resultType="com.example.demo.vo.ChecklistAnswer">
+    SELECT
+      id,
+      run_id,
+      question_id,
+      answer_value,
+      answer_text,
+      score,
+      reg_date,
+      update_date
+    FROM checklist_answers
+    WHERE run_id = #{runId}
+  </select>
+
+  <insert id="upsertAnswer">
+    INSERT INTO checklist_answers
+      (run_id, question_id, answer_value, answer_text, score, reg_date, update_date)
+    VALUES
+      (#{runId}, #{questionId}, #{answerValue}, #{answerText}, #{score}, NOW(), NOW())
+    ON DUPLICATE KEY UPDATE
+      answer_value = VALUES(answer_value),
+      answer_text  = VALUES(answer_text),
+      score        = VALUES(score),
+      update_date  = NOW()
+  </insert>
+
+  <update id="updateRunTotalScore">
+    UPDATE checklist_runs
+    SET
+      total_score = #{totalScore},
+      update_date = NOW()
+    WHERE id = #{runId}
+      AND user_id = #{userId}
+      AND status = 'DRAFT'
+  </update>
+
+  <update id="submitRun">
+    UPDATE checklist_runs
+    SET
+      status = 'SUBMITTED',
+      total_score = #{totalScore},
+      submitted_date = NOW(),
+      update_date = NOW()
+    WHERE id = #{runId}
+      AND user_id = #{userId}
+      AND status = 'DRAFT'
+  </update>
+
+  <select id="getRecommendationRulesByChecklistId" resultType="com.example.demo.vo.RecommendationRule">
+    SELECT
+      id,
+      recommendation_id,
+      checklist_id,
+      rule_type,
+      params_json,
+      reg_date,
+      update_date
+    FROM recommendation_rules
+    WHERE checklist_id = #{checklistId}
+    ORDER BY recommendation_id ASC, id ASC
+  </select>
+
+  <delete id="deleteRunRecommendationsByRunId">
+    DELETE FROM run_recommendations
+    WHERE run_id = #{runId}
+  </delete>
+
+  <insert id="insertRunRecommendation">
+    INSERT INTO run_recommendations
+      (run_id, recommendation_id, reason_text, reg_date, update_date)
+    VALUES
+      (#{runId}, #{recommendationId}, #{reasonText}, NOW(), NOW())
+  </insert>
+
+  <insert id="insertRunRecommendationEvidence">
+    INSERT INTO run_recommendation_evidence
+      (run_recommendation_id, question_id, evidence_text, reg_date, update_date)
+    VALUES
+      (#{runRecommendationId}, #{questionId}, #{evidenceText}, NOW(), NOW())
+    ON DUPLICATE KEY UPDATE
+      evidence_text = VALUES(evidenceText),
+      update_date = NOW()
+  </insert>
+
+  <select id="getRunRecommendationItems" resultType="com.example.demo.vo.RunRecommendationItem">
+    SELECT
+      rr.id AS run_recommendation_id,
+      rr.run_id,
+      rr.recommendation_id,
+      rr.reason_text,
+      r.code AS recommendation_code,
+      r.title AS recommendation_title,
+      r.description AS recommendation_description,
+      r.category AS recommendation_category
+    FROM run_recommendations rr
+    JOIN recommendations r ON r.id = rr.recommendation_id
+    WHERE rr.run_id = #{runId}
+    ORDER BY rr.id ASC
+  </select>
+
+  <select id="getRunRecommendationEvidences" resultType="com.example.demo.vo.RunRecommendationEvidence">
+    SELECT
+      e.id,
+      e.run_recommendation_id,
+      e.question_id,
+      e.evidence_text,
+      e.reg_date,
+      e.update_date
+    FROM run_recommendation_evidence e
+    JOIN run_recommendations rr ON rr.id = e.run_recommendation_id
+    WHERE rr.run_id = #{runId}
+    ORDER BY e.id ASC
+  </select>
+
+</mapper>

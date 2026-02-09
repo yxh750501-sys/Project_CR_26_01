@@ -1,6 +1,5 @@
 package com.example.demo.service;
 
-import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -10,51 +9,29 @@ import com.example.demo.vo.Child;
 
 @Service
 public class ChildService {
+	private final ChildMapper childMapper;
 
-    private final ChildMapper childMapper;
+	public ChildService(ChildMapper childMapper) {
+		this.childMapper = childMapper;
+	}
 
-    public ChildService(ChildMapper childMapper) {
-        this.childMapper = childMapper;
-    }
+	public List<Child> getChildrenByUserId(long userId) {
+		return childMapper.getChildrenByUserId(userId);
+	}
 
-    public List<Child> getChildren(long userId) {
-        return childMapper.findAllByUserId(userId);
-    }
+	public Child getChildByIdAndUserId(long id, long userId) {
+		return childMapper.getChildByIdAndUserId(id, userId);
+	}
 
-    public Child getChild(long id, long userId) {
-        return childMapper.findByIdAndUserId(id, userId);
-    }
+	public boolean writeChild(long userId, String name, String birthDate, String gender, String note) {
+		return childMapper.writeChild(userId, name, birthDate, gender, note) > 0;
+	}
 
-    public void write(long userId, String name, LocalDate birthDate, String gender, String note) {
-        if (name == null || name.isBlank()) throw new IllegalArgumentException("아이 이름을 입력하세요.");
+	public boolean modifyChild(long id, long userId, String name, String birthDate, String gender, String note) {
+		return childMapper.modifyChild(id, userId, name, birthDate, gender, note) > 0;
+	}
 
-        Child c = new Child();
-        c.setUserId(userId);
-        c.setName(name.trim());
-        c.setBirthDate(birthDate);
-        c.setGender((gender == null || gender.isBlank()) ? "U" : gender);
-        c.setNote(note);
-
-        childMapper.insert(c);
-    }
-
-    public void modify(long id, long userId, String name, LocalDate birthDate, String gender, String note) {
-        if (name == null || name.isBlank()) throw new IllegalArgumentException("아이 이름을 입력하세요.");
-
-        Child c = new Child();
-        c.setId(id);
-        c.setUserId(userId);
-        c.setName(name.trim());
-        c.setBirthDate(birthDate);
-        c.setGender((gender == null || gender.isBlank()) ? "U" : gender);
-        c.setNote(note);
-
-        int updated = childMapper.update(c);
-        if (updated == 0) throw new IllegalArgumentException("수정 불가(존재X 또는 권한X).");
-    }
-
-    public void delete(long id, long userId) {
-        int deleted = childMapper.deleteByIdAndUserId(id, userId);
-        if (deleted == 0) throw new IllegalArgumentException("삭제 불가(존재X 또는 권한X).");
-    }
+	public boolean deleteChild(long id, long userId) {
+		return childMapper.deleteChild(id, userId) > 0;
+	}
 }

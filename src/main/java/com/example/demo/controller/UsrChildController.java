@@ -1,102 +1,173 @@
 package com.example.demo.controller;
 
-import java.time.LocalDate;
 import java.util.List;
+
+import jakarta.servlet.http.HttpSession;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.example.demo.service.ChildService;
 import com.example.demo.vo.Child;
 
-import jakarta.servlet.http.HttpSession;
-
 @Controller
-@RequestMapping("/usr/child")
 public class UsrChildController {
 
-    private final ChildService childService;
+	private final ChildService childService;
 
-    public UsrChildController(ChildService childService) {
-        this.childService = childService;
-    }
+	public UsrChildController(ChildService childService) {
+		this.childService = childService;
+	}
 
-    private Long getLoginedUserId(HttpSession session) {
-        Object v = session.getAttribute("loginedUserId");
-        if (v == null) return null;
+	private long getLoginedUserId(HttpSession session) {
+		Object obj = session.getAttribute("loginedUserId");
+		if (obj == null) return 0;
+		return ((Number) obj).longValue();
+	}
 
-        if (v instanceof Long) return (Long) v;
-        if (v instanceof Integer) return ((Integer) v).longValue();
+	private Long getSelectedChildId(HttpSession session) {
+		Object obj = session.getAttribute("selectedChildId");
+		if (obj == null) return null;
+		return ((Number) obj).longValue();
+	}
 
-        try { return Long.parseLong(String.valueOf(v)); }
-        catch (NumberFormatException e) { return null; }
-    }
+	@GetMapping("/usr/child/list")
+	public String showList(HttpSession session, Model model,
+			@RequestParam(value = "needSelect", required = false) String needSelect) {
 
-    @GetMapping("/list")
-    public String showList(HttpSession session, Model model) {
-        Long userId = getLoginedUserId(session);
-        if (userId == null) return "redirect:/usr/member/login";
+		long loginedUserId = getLoginedUserId(session);
 
-        List<Child> children = childService.getChildren(userId);
-        model.addAttribute("children", children);
-        return "usr/child/list";
-    }
+		List<Child> children = childService.getChildrenByUserId(loginedUserId);
+		model.addAttribute("children", children);
 
-    @GetMapping("/write")
-    public String showWrite(HttpSession session) {
-        Long userId = getLoginedUserId(session);
-        if (userId == null) return "redirect:/usr/member/login";
-        return "usr/child/write";
-    }
+		Long selectedChildId = getSelectedChildId(session);
+		Child selectedChild = null;
 
-    @PostMapping("/doWrite")
-    public String doWrite(HttpSession session,
-                          @RequestParam String name,
-                          @RequestParam(required = false) String birthDate,
-                          @RequestParam(defaultValue = "U") String gender,
-                          @RequestParam(required = false) String note) {
-        Long userId = getLoginedUserId(session);
-        if (userId == null) return "redirect:/usr/member/login";
+		if (selectedChildId != null) {
+			selectedChild = childService.getChildByIdAndUserId(selectedChildId, loginedUserId);
 
-        LocalDate bd = (birthDate == null || birthDate.isBlank()) ? null : LocalDate.parse(birthDate);
-        childService.write(userId, name, bd, gender, note);
-        return "redirect:/usr/child/list";
-    }
+			if (selectedChild == null) {
+				session.removeAttribute("selectedChildId");
+				selectedChildId = null;
+			}
+		}
 
-    @GetMapping("/modify")
-    public String showModify(HttpSession session, @RequestParam long id, Model model) {
-        Long userId = getLoginedUserId(session);
-        if (userId == null) return "redirect:/usr/member/login";
+		model.addAttribute("selectedChildId", selectedChildId);
+		model.addAttribute("selectedChild", selectedChild);
 
-        Child child = childService.getChild(id, userId);
-        if (child == null) return "redirect:/usr/child/list";
+		if (needSelect != null) {
+			model.addAttribute("needSelect", true);
+		}
 
-        model.addAttribute("child", child);
-        return "usr/child/modify";
-    }
+		return "usr/child/list";
+	}
 
-    @PostMapping("/doModify")
-    public String doModify(HttpSession session,
-                           @RequestParam long id,
-                           @RequestParam String name,
-                           @RequestParam(required = false) String birthDate,
-                           @RequestParam(defaultValue = "U") String gender,
-                           @RequestParam(required = false) String note) {
-        Long userId = getLoginedUserId(session);
-        if (userId == null) return "redirect:/usr/member/login";
+	@GetMapping("/usr/child/write")
+	public String showWrite() {
+		return "usr/child/write";
+	}
 
-        LocalDate bd = (birthDate == null || birthDate.isBlank()) ? null : LocalDate.parse(birthDate);
-        childService.modify(id, userId, name, bd, gender, note);
-        return "redirect:/usr/child/list";
-    }
+	@PostMapping("/usr/child/doWrite")
+	public String doWrite(HttpSession session,
+			@RequestParam("name") String name,
+			@RequestParam(value = "birthDate", required = false) String birthDate,
+			@RequestParam(value = "gender", required = false, defaultValue = "U") String gender,
+			@RequestParam(value = "note", required = false) String note,
+			RedirectAttributes ra) {
 
-    @PostMapping("/doDelete")
-    public String doDelete(HttpSession session, @RequestParam long id) {
-        Long userId = getLoginedUserId(session);
-        if (userId == null) return "redirect:/usr/member/login";
+		long loginedUserId = getLoginedUserId(session);
 
-        childService.delete(id, userId);
-        return "redirect:/usr/child/list";
-    }
+		name = name == null ? "" : name.trim();
+		if (name.isEmpty()) {
+			ra.addFlashAttribute("msg", "이름은 필수입니다.");
+			return "redirect:/usr/child/write";
+		}
+
+		boolean ok = childService.writeChild(loginedUserId, name, birthDate, gender, note);
+		ra.addFlashAttribute("msg", ok ? "아이 프로필이 등록되었습니다." : "등록에 실패했습니다.");
+
+		return "redirect:/usr/child/list";
+	}
+
+	@GetMapping("/usr/child/modify")
+	public String showModify(HttpSession session, Model model,
+			@RequestParam("id") long id,
+			RedirectAttributes ra) {
+
+		long loginedUserId = getLoginedUserId(session);
+
+		Child child = childService.getChildByIdAndUserId(id, loginedUserId);
+		if (child == null) {
+			ra.addFlashAttribute("msg", "존재하지 않거나 접근할 수 없는 아이입니다.");
+			return "redirect:/usr/child/list";
+		}
+
+		model.addAttribute("child", child);
+		return "usr/child/modify";
+	}
+
+	@PostMapping("/usr/child/doModify")
+	public String doModify(HttpSession session,
+			@RequestParam("id") long id,
+			@RequestParam("name") String name,
+			@RequestParam(value = "birthDate", required = false) String birthDate,
+			@RequestParam(value = "gender", required = false, defaultValue = "U") String gender,
+			@RequestParam(value = "note", required = false) String note,
+			RedirectAttributes ra) {
+
+		long loginedUserId = getLoginedUserId(session);
+
+		name = name == null ? "" : name.trim();
+		if (name.isEmpty()) {
+			ra.addFlashAttribute("msg", "이름은 필수입니다.");
+			return "redirect:/usr/child/modify?id=" + id;
+		}
+
+		boolean ok = childService.modifyChild(id, loginedUserId, name, birthDate, gender, note);
+		ra.addFlashAttribute("msg", ok ? "수정되었습니다." : "수정에 실패했습니다.");
+
+		return "redirect:/usr/child/list";
+	}
+
+	@PostMapping("/usr/child/doDelete")
+	public String doDelete(HttpSession session,
+			@RequestParam("id") long id,
+			RedirectAttributes ra) {
+
+		long loginedUserId = getLoginedUserId(session);
+
+		boolean ok = childService.deleteChild(id, loginedUserId);
+
+		Long selectedChildId = getSelectedChildId(session);
+		if (selectedChildId != null && selectedChildId == id) {
+			session.removeAttribute("selectedChildId");
+		}
+
+		ra.addFlashAttribute("msg", ok ? "삭제되었습니다." : "삭제에 실패했습니다.");
+		return "redirect:/usr/child/list";
+	}
+
+	@PostMapping("/usr/child/doSelect")
+	public String doSelect(HttpSession session,
+			@RequestParam("id") long id,
+			RedirectAttributes ra) {
+
+		long loginedUserId = getLoginedUserId(session);
+
+		Child child = childService.getChildByIdAndUserId(id, loginedUserId);
+		if (child == null) {
+			session.removeAttribute("selectedChildId");
+			ra.addFlashAttribute("msg", "대표 아이로 선택할 수 없습니다.");
+			return "redirect:/usr/child/list";
+		}
+
+		session.setAttribute("selectedChildId", id);
+		ra.addFlashAttribute("msg", "대표 아이가 선택되었습니다: " + child.getName());
+
+		return "redirect:/usr/child/list";
+	}
 }

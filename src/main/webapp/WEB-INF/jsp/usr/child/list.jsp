@@ -43,6 +43,8 @@
 	.badge { padding: 2px 8px; border-radius: 999px; background: #e8f5e9; display: inline-block; }
 	.msg { margin: 10px 0; padding: 10px; background: #fff3cd; border: 1px solid #ffeeba; }
 	.actions form { display: inline; margin: 0; }
+	.topbar { display:flex; gap:10px; align-items:center; margin: 10px 0; }
+	.btnlink { display:inline-block; padding:6px 10px; border:1px solid #ddd; background:#fff; text-decoration:none; border-radius:6px; }
 </style>
 </head>
 <body>
@@ -66,9 +68,11 @@
 	</div>
 <% } %>
 
-<p>
-	<a href="/usr/child/write">아이 프로필 등록</a>
-</p>
+<div class="topbar">
+	<a class="btnlink" href="/usr/child/write">아이 프로필 등록</a>
+	<a class="btnlink" href="/usr/checklist/start">체크리스트 시작</a>
+	<a class="btnlink" href="/usr/member/me">마이페이지</a>
+</div>
 
 <table>
 	<thead>
@@ -124,6 +128,10 @@
 	%>
 	</tbody>
 </table>
+
+<p style="margin-top:12px;">
+	체크리스트 진입 주소: <b>/usr/checklist/start</b>
+</p>
 
 </body>
 </html>

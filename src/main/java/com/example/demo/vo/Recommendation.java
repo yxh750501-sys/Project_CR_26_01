@@ -1,5 +1,7 @@
 package com.example.demo.vo;
 
+import java.time.LocalDateTime;
+
 import lombok.Data;
 
 @Data
@@ -9,6 +11,6 @@ public class Recommendation {
 	private String title;
 	private String description;
 	private String category;
-	private String regDate;
-	private String updateDate;
+	private LocalDateTime regDate;
+	private LocalDateTime updateDate;
 }

@@ -1,22 +1,30 @@
 package com.example.demo.controller;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+import jakarta.servlet.http.HttpSession;
+
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import com.example.demo.repository.UserMapper;
-import com.example.demo.vo.User;
 
 @RestController
 public class TestController {
 
-    private final UserMapper userMapper;
+	@GetMapping("/test/user")
+	public Map<String, Object> testUser(HttpSession session) {
+		Object loginedUserId = session.getAttribute("loginedUserId");
+		Object loginedUserRole = session.getAttribute("loginedUserRole");
+		Object selectedChildId = session.getAttribute("selectedChildId");
 
-    public TestController(UserMapper userMapper) {
-        this.userMapper = userMapper;
-    }
+		boolean isLogined = loginedUserId != null;
 
-    @GetMapping("/test/user")
-    public User testUser() {
-        return userMapper.findByLoginId("test1");
-    }
+		Map<String, Object> rs = new LinkedHashMap<>();
+		rs.put("isLogined", isLogined);
+		rs.put("loginedUserId", loginedUserId);
+		rs.put("loginedUserRole", loginedUserRole);
+		rs.put("selectedChildId", selectedChildId);
+
+		return rs;
+	}
 }

@@ -1,181 +1,132 @@
 package com.example.demo.controller;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import jakarta.servlet.http.HttpSession;
-
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.bind.annotation.*;
 
 import com.example.demo.service.ChecklistService;
-import com.example.demo.service.ChecklistService.SaveResult;
 import com.example.demo.vo.Checklist;
 import com.example.demo.vo.ChecklistAnswer;
 import com.example.demo.vo.ChecklistQuestion;
 import com.example.demo.vo.ChecklistRun;
-import com.example.demo.vo.RunRecommendationItem;
+import com.example.demo.vo.RunRecommendationDto;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
+import lombok.RequiredArgsConstructor;
 
 @Controller
+@RequiredArgsConstructor
 public class UsrChecklistController {
 
 	private final ChecklistService checklistService;
 
-	public UsrChecklistController(ChecklistService checklistService) {
-		this.checklistService = checklistService;
-	}
-
-	private long getLoginedUserId(HttpSession session) {
-		Object obj = session.getAttribute("loginedUserId");
-		if (obj == null) return 0;
-		return ((Number) obj).longValue();
-	}
-
-	private Long getSelectedChildId(HttpSession session) {
-		Object obj = session.getAttribute("selectedChildId");
-		if (obj == null) return null;
-		return ((Number) obj).longValue();
-	}
-
 	@GetMapping("/usr/checklist/start")
 	public String showStart(HttpSession session, Model model) {
-		Long childId = getSelectedChildId(session);
-		if (childId == null) {
-			return "redirect:/usr/child/list?needSelect=1";
-		}
-
 		List<Checklist> checklists = checklistService.getChecklists();
-		model.addAttribute("selectedChildId", childId);
+		Object selectedChildId = session.getAttribute("selectedChildId");
+
 		model.addAttribute("checklists", checklists);
+		model.addAttribute("selectedChildId", selectedChildId);
 
 		return "usr/checklist/start";
 	}
 
 	@PostMapping("/usr/checklist/doStart")
-	public String doStart(HttpSession session,
-			@RequestParam("checklistId") long checklistId,
-			RedirectAttributes ra) {
+	public String doStart(@RequestParam("checklistId") long checklistId, HttpSession session) {
+		Long userId = (Long) session.getAttribute("loginedUserId");
+		Long childId = (Long) session.getAttribute("selectedChildId");
 
-		long userId = getLoginedUserId(session);
-		Long childId = getSelectedChildId(session);
-		if (childId == null) {
-			return "redirect:/usr/child/list?needSelect=1";
+		if (userId == null || childId == null) {
+			return "redirect:/usr/child/list";
 		}
 
-		Checklist c = checklistService.getChecklistById(checklistId);
-		if (c == null) {
-			ra.addFlashAttribute("msg", "체크리스트를 찾을 수 없습니다.");
-			return "redirect:/usr/checklist/start";
-		}
-
-		long runId = checklistService.startRun(checklistId, childId, userId);
-		ra.addFlashAttribute("msg", "체크리스트를 시작했습니다: " + c.getTitle());
-
-		return "redirect:/usr/checklist/run?id=" + runId;
+		long runId = checklistService.createRun(checklistId, childId, userId);
+		return "redirect:/usr/checklist/run?runId=" + runId;
 	}
 
 	@GetMapping("/usr/checklist/run")
-	public String showRun(HttpSession session, Model model,
-			@RequestParam("id") long runId,
-			RedirectAttributes ra) {
+	public String showRun(@RequestParam("runId") long runId, HttpSession session, Model model) {
+		Long userId = (Long) session.getAttribute("loginedUserId");
+		if (userId == null) return "redirect:/usr/member/login";
 
-		long userId = getLoginedUserId(session);
-		Long childId = getSelectedChildId(session);
-		if (childId == null) {
-			return "redirect:/usr/child/list?needSelect=1";
-		}
-
-		ChecklistRun run = checklistService.getRunByIdAndUserId(runId, userId);
-		if (run == null) {
-			ra.addFlashAttribute("msg", "실행 정보를 찾을 수 없습니다.");
-			return "redirect:/usr/checklist/start";
-		}
-
-		Checklist checklist = checklistService.getChecklistById(run.getChecklistId());
-		if (checklist == null) {
-			ra.addFlashAttribute("msg", "체크리스트 정보를 찾을 수 없습니다.");
+		ChecklistRun run = checklistService.getRun(runId);
+		if (run == null || run.getUserId() != userId) {
 			return "redirect:/usr/checklist/start";
 		}
 
 		List<ChecklistQuestion> questions = checklistService.getQuestionsByChecklistId(run.getChecklistId());
-		Map<Long, ChecklistAnswer> answerMap = checklistService.getAnswerMapByRunId(runId);
+		Map<Long, ChecklistAnswer> answersMap = checklistService.getAnswersMapByRunId(runId);
 
-		model.addAttribute("selectedChildId", childId);
 		model.addAttribute("run", run);
-		model.addAttribute("checklist", checklist);
 		model.addAttribute("questions", questions);
-		model.addAttribute("answerMap", answerMap);
+		model.addAttribute("answersMap", answersMap);
 
 		return "usr/checklist/run";
 	}
 
-	@PostMapping("/usr/checklist/doPost")
-	public String doPost(HttpSession session,
-			@RequestParam("runId") long runId,
-			@RequestParam("action") String action,
-			RedirectAttributes ra,
-			@RequestParam Map<String, String> params) {
+	@PostMapping("/usr/checklist/doSubmit")
+	public String doSubmit(@RequestParam("runId") long runId, HttpSession session, HttpServletRequest req) {
+		Long userId = (Long) session.getAttribute("loginedUserId");
+		if (userId == null) return "redirect:/usr/member/login";
 
-		long userId = getLoginedUserId(session);
-
-		ChecklistRun run = checklistService.getRunByIdAndUserId(runId, userId);
-		if (run == null) {
-			ra.addFlashAttribute("msg", "실행 정보를 찾을 수 없습니다.");
+		ChecklistRun run = checklistService.getRun(runId);
+		if (run == null || run.getUserId() != userId) {
 			return "redirect:/usr/checklist/start";
 		}
 
 		List<ChecklistQuestion> questions = checklistService.getQuestionsByChecklistId(run.getChecklistId());
 
-		Map<Long, String> answerValueMap = new HashMap<>();
-		Map<Long, String> answerTextMap = new HashMap<>();
+		// 1) 답변 저장 + 점수 합산
+		int totalScore = checklistService.saveAnswersAndCalcTotalScore(runId, questions, req);
 
-		for (ChecklistQuestion q : questions) {
-			long qid = q.getId();
+		// 2) run 제출 처리
+		checklistService.submitRun(runId, totalScore);
 
-			String v = params.get("answer_" + qid);
-			String t = params.get("text_" + qid);
+		// 3) 추천 + 근거 생성 후 DB 저장
+		checklistService.generateAndSaveRecommendations(runId, questions);
 
-			answerValueMap.put(qid, v);
-			answerTextMap.put(qid, t);
-		}
-
-		boolean submit = "submit".equalsIgnoreCase(action);
-
-		SaveResult result = checklistService.saveOrSubmit(runId, userId, questions, answerValueMap, answerTextMap, submit);
-		ra.addFlashAttribute("msg", result.msg);
-
-		if (result.ok && result.submitted) {
-			return "redirect:/usr/checklist/result?id=" + runId;
-		}
-
-		return "redirect:/usr/checklist/run?id=" + runId;
+		return "redirect:/usr/checklist/result?runId=" + runId;
 	}
 
 	@GetMapping("/usr/checklist/result")
-	public String showResult(HttpSession session, Model model,
-			@RequestParam("id") long runId,
-			RedirectAttributes ra) {
+	public String showResult(@RequestParam("runId") long runId, HttpSession session, Model model) {
+		Long userId = (Long) session.getAttribute("loginedUserId");
+		if (userId == null) return "redirect:/usr/member/login";
 
-		long userId = getLoginedUserId(session);
-
-		ChecklistRun run = checklistService.getRunByIdAndUserId(runId, userId);
-		if (run == null) {
-			ra.addFlashAttribute("msg", "결과 정보를 찾을 수 없습니다.");
+		ChecklistRun run = checklistService.getRun(runId);
+		if (run == null || run.getUserId() != userId) {
 			return "redirect:/usr/checklist/start";
 		}
 
-		Checklist checklist = checklistService.getChecklistById(run.getChecklistId());
-		List<RunRecommendationItem> items = checklistService.getResultItems(runId, userId);
+		List<ChecklistQuestion> questions = checklistService.getQuestionsByChecklistId(run.getChecklistId());
+		Map<Long, ChecklistAnswer> answersMap = checklistService.getAnswersMapByRunId(runId);
+
+		// 저장된 추천/근거
+		List<RunRecommendationDto> runRecs = checklistService.getRunRecommendationsWithEvidence(runId);
 
 		model.addAttribute("run", run);
-		model.addAttribute("checklist", checklist);
-		model.addAttribute("items", items);
+		model.addAttribute("questions", questions);
+		model.addAttribute("answersMap", answersMap);
+		model.addAttribute("runRecs", runRecs);
 
 		return "usr/checklist/result";
+	}
+
+	@GetMapping("/usr/checklist/history")
+	public String showHistory(HttpSession session, Model model) {
+		Long userId = (Long) session.getAttribute("loginedUserId");
+		Long childId = (Long) session.getAttribute("selectedChildId");
+
+		if (userId == null) return "redirect:/usr/member/login";
+		if (childId == null) return "redirect:/usr/child/list";
+
+		List<ChecklistRun> runs = checklistService.getSubmittedRunsByUserAndChild(userId, childId);
+		model.addAttribute("runs", runs);
+
+		return "usr/checklist/history";
 	}
 }

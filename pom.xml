@@ -9,17 +9,19 @@
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
 		<version>3.3.5</version>
-		<relativePath/>
+		<relativePath />
 	</parent>
 
 	<groupId>com.example</groupId>
 	<artifactId>demo</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>demo</name>
+
 	<packaging>war</packaging>
 
 	<properties>
 		<java.version>17</java.version>
+		<mybatis.spring.boot.version>3.0.3</mybatis.spring.boot.version>
 	</properties>
 
 	<dependencies>
@@ -29,10 +31,24 @@
 			<artifactId>spring-boot-starter-web</artifactId>
 		</dependency>
 
-		<!-- JSP -->
+		<!-- WAR 배포 시 톰캣은 provided -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-tomcat</artifactId>
+			<scope>provided</scope>
+		</dependency>
+
+		<!-- JSP 컴파일러 -->
 		<dependency>
 			<groupId>org.apache.tomcat.embed</groupId>
 			<artifactId>tomcat-embed-jasper</artifactId>
+		</dependency>
+
+		<!-- ✅ JSTL (Spring Boot 3 = Jakarta) -->
+		<dependency>
+			<groupId>jakarta.servlet.jsp.jstl</groupId>
+			<artifactId>jakarta.servlet.jsp.jstl-api</artifactId>
+			<version>3.0.0</version>
 		</dependency>
 		<dependency>
 			<groupId>org.glassfish.web</groupId>
@@ -44,20 +60,13 @@
 		<dependency>
 			<groupId>org.mybatis.spring.boot</groupId>
 			<artifactId>mybatis-spring-boot-starter</artifactId>
-			<version>3.0.4</version>
+			<version>${mybatis.spring.boot.version}</version>
 		</dependency>
 
 		<!-- MySQL -->
 		<dependency>
 			<groupId>com.mysql</groupId>
 			<artifactId>mysql-connector-j</artifactId>
-			<scope>runtime</scope>
-		</dependency>
-
-		<!-- BCrypt -->
-		<dependency>
-			<groupId>org.springframework.security</groupId>
-			<artifactId>spring-security-crypto</artifactId>
 		</dependency>
 
 		<!-- Lombok -->
@@ -83,4 +92,5 @@
 			</plugin>
 		</plugins>
 	</build>
+
 </project>

@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.demo.repository.CenterRecommendRepository">
+
+  <resultMap id="centerResultMap" type="com.example.demo.vo.Center">
+    <id property="id" column="id"/>
+    <result property="name" column="name"/>
+    <result property="centerType" column="centerType"/>
+    <result property="phone" column="phone"/>
+    <result property="website" column="website"/>
+    <result property="sido" column="sido"/>
+    <result property="sigungu" column="sigungu"/>
+    <result property="address" column="address"/>
+    <result property="description" column="description"/>
+    <result property="isActive" column="isActive"/>
+    <result property="regDate" column="regDate"/>
+    <result property="updateDate" column="updateDate"/>
+
+    <collection property="services"
+                ofType="com.example.demo.vo.CenterService"
+                column="id"
+                select="getCenterServicesByCenterId"/>
+    <collection property="therapyTypes"
+                ofType="com.example.demo.vo.TherapyType"
+                column="id"
+                select="getTherapyTypesByCenterId"/>
+  </resultMap>
+
+  <resultMap id="centerServiceResultMap" type="com.example.demo.vo.CenterService">
+    <id property="id" column="id"/>
+    <result property="centerId" column="centerId"/>
+    <result property="therapyTypeCode" column="therapyTypeCode"/>
+    <result property="serviceName" column="serviceName"/>
+    <result property="targetAgeMin" column="targetAgeMin"/>
+    <result property="targetAgeMax" column="targetAgeMax"/>
+    <result property="priceType" column="priceType"/>
+    <result property="waitlist" column="waitlist"/>
+    <result property="waitlistNote" column="waitlistNote"/>
+    <result property="notes" column="notes"/>
+    <result property="regDate" column="regDate"/>
+    <result property="updateDate" column="updateDate"/>
+  </resultMap>
+
+  <resultMap id="therapyTypeResultMap" type="com.example.demo.vo.TherapyType">
+    <id property="code" column="code"/>
+    <result property="title" column="title"/>
+    <result property="description" column="description"/>
+    <result property="regDate" column="regDate"/>
+    <result property="updateDate" column="updateDate"/>
+  </resultMap>
+
+  <select id="getRecommendedCentersByDomains" parameterType="list" resultMap="centerResultMap">
+    SELECT DISTINCT
+      c.id            AS id,
+      c.NAME          AS name,
+      c.center_type   AS centerType,
+      c.phone         AS phone,
+      c.website       AS website,
+      c.sido          AS sido,
+      c.sigungu       AS sigungu,
+      c.address       AS address,
+      c.DESCRIPTION   AS description,
+      c.is_active     AS isActive,
+      c.reg_date      AS regDate,
+      c.update_date   AS updateDate
+    FROM centers c
+    INNER JOIN center_services cs ON cs.center_id = c.id
+    INNER JOIN domain_therapy_map dtm ON dtm.therapy_type_code = cs.therapy_type_code
+    WHERE c.is_active = 1
+      AND dtm.domain_code IN
+      <foreach collection="domainCodes" item="d" open="(" separator="," close=")">
+        #{d}
+      </foreach>
+    ORDER BY c.id DESC
+  </select>
+
+  <select id="getCenterServicesByCenterId" resultMap="centerServiceResultMap">
+    SELECT
+      cs.id              AS id,
+      cs.center_id       AS centerId,
+      cs.therapy_type_code AS therapyTypeCode,
+      cs.service_name    AS serviceName,
+      cs.target_age_min  AS targetAgeMin,
+      cs.target_age_max  AS targetAgeMax,
+      cs.price_type      AS priceType,
+      cs.waitlist        AS waitlist,
+      cs.waitlist_note   AS waitlistNote,
+      cs.notes           AS notes,
+      cs.reg_date        AS regDate,
+      cs.update_date     AS updateDate
+    FROM center_services cs
+    WHERE cs.center_id = #{centerId}
+    ORDER BY cs.id DESC
+  </select>
+
+  <select id="getTherapyTypesByCenterId" resultMap="therapyTypeResultMap">
+    SELECT DISTINCT
+      tt.CODE        AS code,
+      tt.title       AS title,
+      tt.DESCRIPTION AS description,
+      tt.reg_date    AS regDate,
+      tt.update_date AS updateDate
+    FROM therapy_types tt
+    INNER JOIN center_services cs ON cs.therapy_type_code = tt.CODE
+    WHERE cs.center_id = #{centerId}
+    ORDER BY tt.CODE ASC
+  </select>
+
+</mapper>

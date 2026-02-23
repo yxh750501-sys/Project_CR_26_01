@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.demo.repository.CenterMapper">
+
+  <select id="getTherapyTypesByDomain" resultType="map">
+    SELECT
+      dtm.domain_code AS domainCode,
+      dtm.therapy_type_code AS therapyTypeCode,
+      dtm.priority AS priority,
+      tt.title AS therapyTitle,
+      tt.description AS therapyDescription
+    FROM domain_therapy_map dtm
+    JOIN therapy_types tt ON tt.code = dtm.therapy_type_code
+    WHERE dtm.domain_code = #{domainCode}
+    ORDER BY dtm.priority ASC
+  </select>
+
+  <select id="findCentersForTherapy" resultType="map">
+    SELECT
+      c.id AS centerId,
+      c.name AS centerName,
+      c.center_type AS centerType,
+      c.phone AS phone,
+      c.website AS website,
+      c.sido AS sido,
+      c.sigungu AS sigungu,
+      c.address AS address,
+      c.lat AS lat,
+      c.lng AS lng,
+      c.description AS description,
+      c.source AS source,
+      c.source_updated_at AS sourceUpdatedAt,
+      cs.therapy_type_code AS therapyTypeCode,
+      tt.title AS therapyTitle,
+      cs.service_name AS serviceName,
+      cs.target_age_min AS targetAgeMin,
+      cs.target_age_max AS targetAgeMax,
+      cs.price_type AS priceType,
+      cs.waitlist AS waitlist,
+      cs.waitlist_note AS waitlistNote,
+      cs.notes AS serviceNotes
+      <if test="lat != null and lng != null">
+        , ROUND(
+            6371 * ACOS(
+              COS(RADIANS(#{lat})) * COS(RADIANS(c.lat)) * COS(RADIANS(c.lng) - RADIANS(#{lng}))
+              + SIN(RADIANS(#{lat})) * SIN(RADIANS(c.lat))
+            )
+          , 2) AS distanceKm
+      </if>
+    FROM centers c
+    JOIN center_services cs ON cs.center_id = c.id
+    JOIN therapy_types tt ON tt.code = cs.therapy_type_code
+    WHERE c.is_active = 1
+      AND cs.therapy_type_code = #{therapyTypeCode}
+
+      <if test="sido != null and sido != ''">
+        AND c.sido = #{sido}
+      </if>
+
+      <if test="sigungu != null and sigungu != ''">
+        AND c.sigungu = #{sigungu}
+      </if>
+
+      <if test="lat != null and lng != null">
+        AND c.lat IS NOT NULL AND c.lng IS NOT NULL
+      </if>
+
+      <if test="lat != null and lng != null and radiusKm != null">
+        AND (
+          6371 * ACOS(
+            COS(RADIANS(#{lat})) * COS(RADIANS(c.lat)) * COS(RADIANS(c.lng) - RADIANS(#{lng}))
+            + SIN(RADIANS(#{lat})) * SIN(RADIANS(c.lat))
+          )
+        ) &lt;= #{radiusKm}
+      </if>
+
+    <choose>
+      <when test="lat != null and lng != null">
+        ORDER BY distanceKm ASC, c.update_date DESC
+      </when>
+      <otherwise>
+        ORDER BY c.update_date DESC, c.id DESC
+      </otherwise>
+    </choose>
+
+    LIMIT #{limit}
+  </select>
+
+</mapper>

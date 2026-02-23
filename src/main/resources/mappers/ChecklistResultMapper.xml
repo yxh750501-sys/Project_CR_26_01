@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.demo.repository.ChecklistResultRepository">
+
+  <select id="countRunOwnedByUser" resultType="int">
+    SELECT COUNT(*)
+    FROM checklist_runs
+    WHERE id = #{runId}
+      AND user_id = #{userId}
+  </select>
+
+  <select id="getRunStatus" resultType="string">
+    SELECT `STATUS`
+    FROM checklist_runs
+    WHERE id = #{runId}
+    LIMIT 1
+  </select>
+
+  <select id="getDomainStatsByRunId" resultType="com.example.demo.vo.DomainStat">
+    SELECT
+      q.domain_code AS domainCode,
+      COUNT(*)      AS cnt,
+      IFNULL(SUM(a.score),0) AS sumScore,
+      IFNULL(AVG(a.score),0) AS avgScore
+    FROM checklist_answers a
+    JOIN checklist_questions q ON q.id = a.question_id
+    WHERE a.run_id = #{runId}
+    GROUP BY q.domain_code
+    ORDER BY avgScore DESC, sumScore DESC
+  </select>
+
+  <select id="getTherapyTypeCodesByDomains" resultType="string">
+    SELECT dtm.therapy_type_code
+    FROM domain_therapy_map dtm
+    WHERE dtm.domain_code IN
+    <foreach collection="domains" item="d" open="(" separator="," close=")">
+      #{d}
+    </foreach>
+    ORDER BY dtm.domain_code ASC, dtm.priority ASC
+  </select>
+
+  <select id="getCentersByTherapyTypeCodes" resultType="com.example.demo.vo.Center">
+    SELECT
+      c.id AS id,
+      c.NAME AS name,
+      c.center_type AS centerType,
+      c.phone AS phone,
+      c.website AS website,
+      c.sido AS sido,
+      c.sigungu AS sigungu,
+      c.address AS address,
+      c.DESCRIPTION AS description,
+      GROUP_CONCAT(DISTINCT cs.therapy_type_code ORDER BY cs.therapy_type_code SEPARATOR ',') AS therapyTypeCodes
+    FROM centers c
+    JOIN center_services cs ON cs.center_id = c.id
+    WHERE c.is_active = 1
+      AND cs.therapy_type_code IN
+      <foreach collection="therapyTypeCodes" item="t" open="(" separator="," close=")">
+        #{t}
+      </foreach>
+    GROUP BY c.id
+    ORDER BY c.sido ASC, c.sigungu ASC, c.id ASC
+    LIMIT 50
+  </select>
+
+</mapper>

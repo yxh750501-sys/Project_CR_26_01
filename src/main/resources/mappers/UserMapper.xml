@@ -3,24 +3,37 @@
   PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-<mapper namespace="com.example.demo.repository.UserMapper">
+<mapper namespace="com.example.demo.repository.UserRepository">
+
+  <select id="getUserById" resultType="com.example.demo.vo.User">
+    SELECT
+      id         AS id,
+      login_id   AS loginId,
+      login_pw   AS loginPw,
+      `ROLE`     AS role,
+      reg_date   AS regDate
+    FROM users
+    WHERE id = #{id}
+  </select>
 
   <select id="getUserByLoginId" resultType="com.example.demo.vo.User">
     SELECT
-      id,
-      login_id AS loginId,
-      login_pw AS loginPw,
-      role,
-      reg_date AS regDate
+      id         AS id,
+      login_id   AS loginId,
+      login_pw   AS loginPw,
+      `ROLE`     AS role,
+      reg_date   AS regDate
     FROM users
     WHERE login_id = #{loginId}
-    LIMIT 1
   </select>
 
-  <insert id="insertUser" parameterType="com.example.demo.vo.User"
-          useGeneratedKeys="true" keyProperty="id">
-    INSERT INTO users (login_id, login_pw, role)
-    VALUES (#{loginId}, #{loginPw}, #{role})
+  <insert id="createUser">
+    INSERT INTO users (login_id, login_pw, `ROLE`, reg_date)
+    VALUES (#{loginId}, #{loginPw}, #{role}, NOW())
   </insert>
+
+  <select id="getLastInsertId" resultType="long">
+    SELECT LAST_INSERT_ID()
+  </select>
 
 </mapper>

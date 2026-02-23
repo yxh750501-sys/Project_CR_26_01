@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.demo.repository.ChecklistStartRepository">
+
+  <select id="getChecklistById" resultType="com.example.demo.vo.ChecklistForStart">
+    SELECT
+      id          AS id,
+      CODE        AS code,
+      title       AS title,
+      DESCRIPTION AS description,
+      reg_date    AS regDate,
+      update_date AS updateDate
+    FROM checklists
+    WHERE id = #{checklistId}
+  </select>
+
+  <select id="getQuestionsByChecklistId" resultType="com.example.demo.vo.ChecklistQuestionForStart">
+    SELECT
+      id            AS id,
+      checklist_id  AS checklistId,
+      CODE          AS code,
+      question_text AS questionText,
+      help_text     AS helpText,
+      response_type AS responseType,
+      CAST(options_json AS CHAR) AS optionsJson,
+      weight        AS weight,
+      sort_order    AS sortOrder,
+      domain_code   AS domainCode
+    FROM checklist_questions
+    WHERE checklist_id = #{checklistId}
+    ORDER BY sort_order ASC, id ASC
+  </select>
+
+  <select id="getLatestDraftRunId" resultType="long">
+    SELECT id
+    FROM checklist_runs
+    WHERE user_id = #{userId}
+      AND child_id = #{childId}
+      AND checklist_id = #{checklistId}
+      AND `STATUS` = 'DRAFT'
+    ORDER BY id DESC
+    LIMIT 1
+  </select>
+
+  <insert id="createRun">
+    INSERT INTO checklist_runs
+      (checklist_id, child_id, user_id, `STATUS`, total_score, reg_date, update_date)
+    VALUES
+      (#{checklistId}, #{childId}, #{userId}, 'DRAFT', 0, NOW(), NOW())
+  </insert>
+
+  <select id="getLastInsertId" resultType="long">
+    SELECT LAST_INSERT_ID()
+  </select>
+
+  <insert id="upsertAnswer">
+    INSERT INTO checklist_answers
+      (run_id, question_id, answer_value, answer_text, score, reg_date, update_date)
+    VALUES
+      (#{runId}, #{questionId}, #{answerValue}, #{answerText}, #{score}, NOW(), NOW())
+    ON DUPLICATE KEY UPDATE
+      answer_value = VALUES(answer_value),
+      answer_text  = VALUES(answer_text),
+      score        = VALUES(score),
+      update_date  = NOW()
+  </insert>
+
+  <update id="submitRun">
+    UPDATE checklist_runs
+    SET
+      `STATUS` = 'SUBMITTED',
+      total_score = #{totalScore},
+      submitted_date = NOW(),
+      update_date = NOW()
+    WHERE id = #{runId}
+  </update>
+
+  <select id="getFirstChildIdByUserId" resultType="long">
+    SELECT id
+    FROM children
+    WHERE user_id = #{userId}
+    ORDER BY id ASC
+    LIMIT 1
+  </select>
+
+  <select id="countRunOwnedByUser" resultType="int">
+    SELECT COUNT(*)
+    FROM checklist_runs
+    WHERE id = #{runId}
+      AND user_id = #{userId}
+  </select>
+
+  <select id="getRunStatusByIdAndUserId" resultType="string">
+    SELECT `STATUS`
+    FROM checklist_runs
+    WHERE id = #{runId}
+      AND user_id = #{userId}
+    LIMIT 1
+  </select>
+
+  <select id="getAnswersByRunId" resultType="com.example.demo.vo.AnswerForStart">
+    SELECT
+      run_id     AS runId,
+      question_id AS questionId,
+      answer_value AS answerValue,
+      answer_text  AS answerText,
+      score        AS score
+    FROM checklist_answers
+    WHERE run_id = #{runId}
+  </select>
+
+</mapper>

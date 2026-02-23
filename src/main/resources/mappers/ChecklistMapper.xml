@@ -3,160 +3,35 @@
   PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-<mapper namespace="com.example.demo.repository.ChecklistMapper">
+<mapper namespace="com.example.demo.repository.ChecklistRepository">
 
-  <!-- Checklists -->
-  <select id="getChecklists" resultType="com.example.demo.vo.Checklist">
-    SELECT id, code, title, description, reg_date AS regDate, update_date AS updateDate
-    FROM checklists
-    ORDER BY id DESC
-  </select>
-
-  <!-- Runs -->
-  <insert id="insertRun" parameterType="com.example.demo.vo.ChecklistRun" useGeneratedKeys="true" keyProperty="id">
-    INSERT INTO checklist_runs(checklist_id, child_id, user_id, status, total_score, submitted_date, reg_date, update_date)
-    VALUES(#{checklistId}, #{childId}, #{userId}, #{status}, #{totalScore}, #{submittedDate}, NOW(), NOW())
-  </insert>
-
-  <select id="getRunById" resultType="com.example.demo.vo.ChecklistRun">
+  <select id="getRunInfoForResult" resultType="map">
     SELECT
-      id,
-      checklist_id AS checklistId,
-      child_id AS childId,
-      user_id AS userId,
-      status,
-      total_score AS totalScore,
-      submitted_date AS submittedDate,
-      reg_date AS regDate,
-      update_date AS updateDate
-    FROM checklist_runs
-    WHERE id = #{runId}
+      r.id            AS runId,
+      r.memberId      AS memberId,
+      r.childId       AS childId,
+      ch.name         AS childName,
+      r.checklistId   AS checklistId,
+      cl.title        AS checklistTitle,
+      r.createdAt     AS createdAt
+    FROM checklist_runs r
+    INNER JOIN children ch ON ch.id = r.childId
+    INNER JOIN checklists cl ON cl.id = r.checklistId
+    WHERE r.id = #{runId}
+      AND r.memberId = #{memberId}
   </select>
 
-  <select id="getSubmittedRunsByUserAndChild" resultType="com.example.demo.vo.ChecklistRun">
+  <select id="getDomainStatsByRunId" resultType="com.example.demo.vo.DomainStat">
     SELECT
-      id,
-      checklist_id AS checklistId,
-      child_id AS childId,
-      user_id AS userId,
-      status,
-      total_score AS totalScore,
-      submitted_date AS submittedDate,
-      reg_date AS regDate,
-      update_date AS updateDate
-    FROM checklist_runs
-    WHERE user_id = #{userId}
-      AND child_id = #{childId}
-      AND status = 'SUBMITTED'
-    ORDER BY submitted_date DESC, id DESC
-  </select>
-
-  <!-- Questions -->
-  <select id="getQuestionsByChecklistId" resultType="com.example.demo.vo.ChecklistQuestion">
-    SELECT
-      id,
-      checklist_id AS checklistId,
-      code,
-      question_text AS questionText,
-      help_text AS helpText,
-      response_type AS responseType,
-      options_json AS optionsJson,
-      weight,
-      sort_order AS sortOrder,
-      reg_date AS regDate,
-      update_date AS updateDate
-    FROM checklist_questions
-    WHERE checklist_id = #{checklistId}
-    ORDER BY sort_order ASC, id ASC
-  </select>
-
-  <!-- Answers -->
-  <select id="getAnswersByRunId" resultType="com.example.demo.vo.ChecklistAnswer">
-    SELECT
-      id,
-      run_id AS runId,
-      question_id AS questionId,
-      answer_value AS answerValue,
-      answer_text AS answerText,
-      score,
-      reg_date AS regDate,
-      update_date AS updateDate
-    FROM checklist_answers
-    WHERE run_id = #{runId}
-  </select>
-
-  <insert id="upsertAnswer">
-    INSERT INTO checklist_answers(run_id, question_id, answer_value, answer_text, score, reg_date, update_date)
-    VALUES(#{runId}, #{questionId}, #{answerValue}, #{answerText}, #{score}, NOW(), NOW())
-    ON DUPLICATE KEY UPDATE
-      answer_value = VALUES(answer_value),
-      answer_text = VALUES(answer_text),
-      score = VALUES(score),
-      update_date = NOW()
-  </insert>
-
-  <update id="submitRun">
-    UPDATE checklist_runs
-    SET status = 'SUBMITTED',
-        total_score = #{totalScore},
-        submitted_date = NOW(),
-        update_date = NOW()
-    WHERE id = #{runId}
-  </update>
-
-  <!-- Recommendations templates -->
-  <select id="getAllRecommendations" resultType="com.example.demo.vo.Recommendation">
-    SELECT id, code, title, description, category, reg_date AS regDate, update_date AS updateDate
-    FROM recommendations
-  </select>
-
-  <!-- Run recommendations -->
-  <delete id="deleteRunRecommendations">
-    DELETE FROM run_recommendations WHERE run_id = #{runId}
-  </delete>
-
-  <insert id="insertRunRecommendation" parameterType="com.example.demo.vo.RunRecommendationParam" useGeneratedKeys="true" keyProperty="id">
-    INSERT INTO run_recommendations(run_id, recommendation_id, reason_text, reg_date, update_date)
-    VALUES(#{runId}, #{recommendationId}, #{reasonText}, NOW(), NOW())
-  </insert>
-
-  <insert id="insertEvidence">
-    INSERT INTO run_recommendation_evidence(run_recommendation_id, question_id, evidence_text, reg_date, update_date)
-    VALUES(#{runRecommendationId}, #{questionId}, #{evidenceText}, NOW(), NOW())
-    ON DUPLICATE KEY UPDATE
-      evidence_text = VALUES(evidence_text),
-      update_date = NOW()
-  </insert>
-
-  <select id="getRunRecommendations" resultType="com.example.demo.vo.RunRecommendationDto">
-    SELECT
-      rr.id,
-      rr.run_id AS runId,
-      rr.recommendation_id AS recommendationId,
-      rr.reason_text AS reasonText,
-      rr.reg_date AS regDate,
-      r.code AS recommendationCode,
-      r.title AS recommendationTitle,
-      r.category AS category,
-      r.description AS description
-    FROM run_recommendations rr
-    JOIN recommendations r ON r.id = rr.recommendation_id
-    WHERE rr.run_id = #{runId}
-    ORDER BY rr.id ASC
-  </select>
-
-  <select id="getEvidencesByRunRecommendationId" resultType="com.example.demo.vo.RunRecommendationEvidenceDto">
-    SELECT
-      e.id,
-      e.run_recommendation_id AS runRecommendationId,
-      e.question_id AS questionId,
-      q.code AS questionCode,
-      e.evidence_text AS evidenceText,
-      e.reg_date AS regDate
-    FROM run_recommendation_evidence e
-    LEFT JOIN checklist_questions q ON q.id = e.question_id
-    WHERE e.run_recommendation_id = #{runRecommendationId}
-    ORDER BY e.id ASC
+      q.domainCode                        AS domainCode,
+      IFNULL(SUM(a.answerValue), 0)       AS totalScore,
+      IFNULL(AVG(a.answerValue), 0)       AS avgScore,
+      COUNT(*)                            AS questionCount
+    FROM checklist_answers a
+    INNER JOIN checklist_questions q ON q.id = a.questionId
+    WHERE a.runId = #{runId}
+    GROUP BY q.domainCode
+    ORDER BY avgScore DESC, totalScore DESC
   </select>
 
 </mapper>

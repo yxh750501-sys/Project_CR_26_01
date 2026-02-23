@@ -1,48 +1,114 @@
 package com.example.demo.service;
 
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import com.example.demo.repository.UserMapper;
+import com.example.demo.repository.UserRepository;
 import com.example.demo.vo.User;
+
+import jakarta.servlet.http.HttpSession;
 
 @Service
 public class UserService {
 
-	private final UserMapper userMapper;
-	private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+	public static final String SESSION_KEY_USER_ID = "loginedUserId";
+	public static final String SESSION_KEY_USER_ROLE = "loginedUserRole";
 
-	public UserService(UserMapper userMapper) {
-		this.userMapper = userMapper;
+	private final UserRepository userRepository;
+
+	public UserService(UserRepository userRepository) {
+		this.userRepository = userRepository;
+	}
+
+	public User getUserById(long id) {
+		if (id <= 0) {
+			return null;
+		}
+		return userRepository.getUserById(id);
 	}
 
 	public User getUserByLoginId(String loginId) {
-		return userMapper.getUserByLoginId(loginId);
+		if (loginId == null || loginId.isBlank()) {
+			return null;
+		}
+		return userRepository.getUserByLoginId(loginId);
 	}
 
+	@Transactional
 	public long join(String loginId, String loginPw, String role) {
-		User exists = userMapper.getUserByLoginId(loginId);
-		if (exists != null) {
-			return -1;
+		if (loginId == null || loginId.isBlank()) {
+			throw new IllegalArgumentException("loginId is required");
+		}
+		if (loginPw == null || loginPw.isBlank()) {
+			throw new IllegalArgumentException("loginPw is required");
 		}
 
-		User user = new User();
-		user.setLoginId(loginId);
-		user.setLoginPw(encoder.encode(loginPw));
-		user.setRole(role == null || role.isBlank() ? "GUARDIAN" : role);
+		String normalizedRole = (role == null || role.isBlank()) ? "GUARDIAN" : role;
 
-		userMapper.insertUser(user);
-		return user.getId();
+		User existing = userRepository.getUserByLoginId(loginId);
+		if (existing != null) {
+			throw new IllegalStateException("이미 존재하는 로그인 아이디입니다.");
+		}
+
+		userRepository.createUser(loginId, loginPw, normalizedRole);
+		return userRepository.getLastInsertId();
 	}
 
 	public User login(String loginId, String loginPw) {
-		User user = userMapper.getUserByLoginId(loginId);
+		if (loginId == null || loginId.isBlank()) {
+			return null;
+		}
+		if (loginPw == null || loginPw.isBlank()) {
+			return null;
+		}
 
-		// ★ 여기서 null 체크 안 하면, DB에 계정이 없을 때 바로 500(NPE) 터진다
-		if (user == null) return null;
-		if (user.getLoginPw() == null || user.getLoginPw().isBlank()) return null;
+		User user = userRepository.getUserByLoginId(loginId);
+		if (user == null) {
+			return null;
+		}
 
-		boolean ok = encoder.matches(loginPw, user.getLoginPw());
-		return ok ? user : null;
+		String savedPw = user.getLoginPw();
+		if (savedPw == null || !savedPw.equals(loginPw)) {
+			return null;
+		}
+
+		return user;
+	}
+
+	public void setLoginSession(User user, HttpSession session) {
+		if (user == null || session == null) {
+			return;
+		}
+		session.setAttribute(SESSION_KEY_USER_ID, user.getId());
+		session.setAttribute(SESSION_KEY_USER_ROLE, user.getRole());
+	}
+
+	public void logout(HttpSession session) {
+		if (session == null) {
+			return;
+		}
+		session.removeAttribute(SESSION_KEY_USER_ID);
+		session.removeAttribute(SESSION_KEY_USER_ROLE);
+	}
+
+	public Long getLoginedUserId(HttpSession session) {
+		if (session == null) return null;
+		return toLong(session.getAttribute(SESSION_KEY_USER_ID));
+	}
+
+	public String getLoginedUserRole(HttpSession session) {
+		if (session == null) return null;
+		Object v = session.getAttribute(SESSION_KEY_USER_ROLE);
+		return v == null ? null : v.toString();
+	}
+
+	private Long toLong(Object v) {
+		if (v == null) return null;
+		if (v instanceof Number) return ((Number) v).longValue();
+		try {
+			return Long.parseLong(v.toString());
+		} catch (Exception e) {
+			return null;
+		}
 	}
 }

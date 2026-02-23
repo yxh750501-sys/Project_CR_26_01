@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.demo.repository.RunRecommendationMapper">
+
+  <select id="countRunRecommendationsForUser" resultType="int">
+    SELECT COUNT(*)
+    FROM run_recommendations rr
+    JOIN checklist_runs cr ON cr.id = rr.run_id
+    WHERE rr.run_id = #{runId}
+      AND cr.user_id = #{userId}
+  </select>
+
+  <select id="getRunInfoForUser" resultType="map">
+    SELECT
+      id,
+      checklist_id AS checklistId,
+      child_id AS childId,
+      user_id AS userId,
+      status,
+      total_score AS totalScore,
+      submitted_date AS submittedDate,
+      reg_date AS regDate
+    FROM checklist_runs
+    WHERE id = #{runId}
+      AND user_id = #{userId}
+  </select>
+
+  <select id="getAnsweredRowsForRun" resultType="map">
+    SELECT
+      q.id AS questionId,
+      q.code AS questionCode,
+      q.question_text AS questionText,
+      q.response_type AS responseType,
+      q.weight AS weight,
+      a.answer_value AS answerValue,
+      a.answer_text AS answerText
+    FROM checklist_answers a
+    JOIN checklist_questions q ON q.id = a.question_id
+    WHERE a.run_id = #{runId}
+    ORDER BY q.sort_order ASC
+  </select>
+
+  <select id="getRecommendationIdByCode" resultType="long">
+    SELECT id
+    FROM recommendations
+    WHERE code = #{code}
+  </select>
+
+  <delete id="deleteEvidenceByRunId">
+    DELETE e
+    FROM run_recommendation_evidence e
+    JOIN run_recommendations rr ON rr.id = e.run_recommendation_id
+    WHERE rr.run_id = #{runId}
+  </delete>
+
+  <delete id="deleteRunRecommendationsByRunId">
+    DELETE
+    FROM run_recommendations
+    WHERE run_id = #{runId}
+  </delete>
+
+  <insert id="insertRunRecommendation">
+    INSERT INTO run_recommendations(run_id, recommendation_id, reason_text)
+    VALUES(#{runId}, #{recommendationId}, #{reasonText})
+  </insert>
+
+  <select id="getLastInsertId" resultType="long">
+    SELECT LAST_INSERT_ID()
+  </select>
+
+  <insert id="insertEvidence">
+    INSERT INTO run_recommendation_evidence(run_recommendation_id, question_id, evidence_text)
+    VALUES(#{runRecommendationId}, #{questionId}, #{evidenceText})
+  </insert>
+
+  <select id="getRunRecommendationsForUser" resultType="map">
+    SELECT
+      rr.id AS runRecommendationId,
+      rr.run_id AS runId,
+      rr.reason_text AS reasonText,
+      r.id AS recommendationId,
+      r.code AS recommendationCode,
+      r.title AS title,
+      r.description AS description,
+      r.category AS category
+    FROM run_recommendations rr
+    JOIN recommendations r ON r.id = rr.recommendation_id
+    JOIN checklist_runs cr ON cr.id = rr.run_id
+    WHERE rr.run_id = #{runId}
+      AND cr.user_id = #{userId}
+    ORDER BY rr.id ASC
+  </select>
+
+  <select id="getRunRecommendationEvidenceForUser" resultType="map">
+    SELECT
+      e.id AS evidenceId,
+      e.run_recommendation_id AS runRecommendationId,
+      e.question_id AS questionId,
+      q.code AS questionCode,
+      e.evidence_text AS evidenceText
+    FROM run_recommendation_evidence e
+    JOIN run_recommendations rr ON rr.id = e.run_recommendation_id
+    JOIN checklist_runs cr ON cr.id = rr.run_id
+    LEFT JOIN checklist_questions q ON q.id = e.question_id
+    WHERE rr.run_id = #{runId}
+      AND cr.user_id = #{userId}
+    ORDER BY e.id ASC
+  </select>
+
+  <select id="getRecoSummariesByRunIdsForUser" resultType="map">
+    SELECT
+      rr.run_id AS runId,
+      GROUP_CONCAT(r.title ORDER BY rr.id SEPARATOR ' / ') AS titles
+    FROM run_recommendations rr
+    JOIN recommendations r ON r.id = rr.recommendation_id
+    JOIN checklist_runs cr ON cr.id = rr.run_id
+    WHERE cr.user_id = #{userId}
+      AND rr.run_id IN
+      <foreach collection="runIds" item="id" open="(" separator="," close=")">
+        #{id}
+      </foreach>
+    GROUP BY rr.run_id
+  </select>
+
+</mapper>

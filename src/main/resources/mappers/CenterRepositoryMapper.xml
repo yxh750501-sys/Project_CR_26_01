@@ -1,0 +1,287 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.demo.repository.CenterRepository">
+
+  <!-- ========= Result Maps ========= -->
+
+  <resultMap id="centerResultMap" type="com.example.demo.vo.Center">
+    <id   property="id"          column="id"/>
+    <result property="name"        column="name"/>
+    <result property="centerType"  column="centerType"/>
+    <result property="phone"       column="phone"/>
+    <result property="website"     column="website"/>
+    <result property="sido"        column="sido"/>
+    <result property="sigungu"     column="sigungu"/>
+    <result property="address"     column="address"/>
+    <result property="description" column="description"/>
+    <result property="isActive"    column="isActive"/>
+    <result property="regDate"     column="regDate"/>
+    <result property="updateDate"  column="updateDate"/>
+    <collection property="services"
+                ofType="com.example.demo.vo.CenterService"
+                column="id"
+                select="getCenterServicesByCenterId"/>
+    <collection property="therapyTypes"
+                ofType="com.example.demo.vo.TherapyType"
+                column="id"
+                select="getTherapyTypesByCenterId"/>
+  </resultMap>
+
+  <resultMap id="centerServiceResultMap" type="com.example.demo.vo.CenterService">
+    <id   property="id"              column="id"/>
+    <result property="centerId"        column="centerId"/>
+    <result property="therapyTypeCode" column="therapyTypeCode"/>
+    <result property="serviceName"     column="serviceName"/>
+    <result property="targetAgeMin"    column="targetAgeMin"/>
+    <result property="targetAgeMax"    column="targetAgeMax"/>
+    <result property="priceType"       column="priceType"/>
+    <result property="waitlist"        column="waitlist"/>
+    <result property="waitlistNote"    column="waitlistNote"/>
+    <result property="notes"           column="notes"/>
+    <result property="regDate"         column="regDate"/>
+    <result property="updateDate"      column="updateDate"/>
+  </resultMap>
+
+  <resultMap id="therapyTypeResultMap" type="com.example.demo.vo.TherapyType">
+    <id   property="code"        column="code"/>
+    <result property="title"       column="title"/>
+    <result property="description" column="description"/>
+    <result property="regDate"     column="regDate"/>
+    <result property="updateDate"  column="updateDate"/>
+  </resultMap>
+
+  <!-- ========= Center CRUD ========= -->
+
+  <select id="getCenterById" parameterType="int" resultMap="centerResultMap">
+    SELECT
+      c.id          AS id,
+      c.name        AS name,
+      c.center_type AS centerType,
+      c.phone       AS phone,
+      c.website     AS website,
+      c.sido        AS sido,
+      c.sigungu     AS sigungu,
+      c.address     AS address,
+      c.description AS description,
+      c.is_active   AS isActive,
+      c.reg_date    AS regDate,
+      c.update_date AS updateDate
+    FROM centers c
+    WHERE c.id = #{id}
+  </select>
+
+  <select id="getCenters" resultMap="centerResultMap">
+    SELECT
+      c.id          AS id,
+      c.name        AS name,
+      c.center_type AS centerType,
+      c.phone       AS phone,
+      c.website     AS website,
+      c.sido        AS sido,
+      c.sigungu     AS sigungu,
+      c.address     AS address,
+      c.description AS description,
+      c.is_active   AS isActive,
+      c.reg_date    AS regDate,
+      c.update_date AS updateDate
+    FROM centers c
+    ORDER BY c.id DESC
+  </select>
+
+  <select id="searchCenters" resultMap="centerResultMap">
+    SELECT
+      c.id          AS id,
+      c.name        AS name,
+      c.center_type AS centerType,
+      c.phone       AS phone,
+      c.website     AS website,
+      c.sido        AS sido,
+      c.sigungu     AS sigungu,
+      c.address     AS address,
+      c.description AS description,
+      c.is_active   AS isActive,
+      c.reg_date    AS regDate,
+      c.update_date AS updateDate
+    FROM centers c
+    WHERE 1=1
+    <if test="region != null and region != ''">
+      AND (c.sido    LIKE CONCAT('%', #{region}, '%')
+           OR c.sigungu LIKE CONCAT('%', #{region}, '%'))
+    </if>
+    <if test="keyword != null and keyword != ''">
+      AND (c.name    LIKE CONCAT('%', #{keyword}, '%')
+           OR c.address LIKE CONCAT('%', #{keyword}, '%'))
+    </if>
+    ORDER BY c.id DESC
+  </select>
+
+  <insert id="insertCenter" parameterType="com.example.demo.vo.Center"
+          useGeneratedKeys="true" keyProperty="id">
+    INSERT INTO centers (name, center_type, phone, website, sido, sigungu, address, description, is_active)
+    VALUES (#{name}, #{centerType}, #{phone}, #{website}, #{sido}, #{sigungu}, #{address}, #{description}, #{isActive})
+  </insert>
+
+  <update id="updateCenter" parameterType="com.example.demo.vo.Center">
+    UPDATE centers SET
+      name        = #{name},
+      center_type = #{centerType},
+      phone       = #{phone},
+      website     = #{website},
+      sido        = #{sido},
+      sigungu     = #{sigungu},
+      address     = #{address},
+      description = #{description},
+      is_active   = #{isActive}
+    WHERE id = #{id}
+  </update>
+
+  <delete id="deleteCenter" parameterType="int">
+    DELETE FROM centers WHERE id = #{id}
+  </delete>
+
+  <!-- ========= CenterService CRUD ========= -->
+
+  <select id="getCenterServicesByCenterId" resultMap="centerServiceResultMap">
+    SELECT
+      cs.id                AS id,
+      cs.center_id         AS centerId,
+      cs.therapy_type_code AS therapyTypeCode,
+      cs.service_name      AS serviceName,
+      cs.target_age_min    AS targetAgeMin,
+      cs.target_age_max    AS targetAgeMax,
+      cs.price_type        AS priceType,
+      cs.waitlist          AS waitlist,
+      cs.waitlist_note     AS waitlistNote,
+      cs.notes             AS notes,
+      cs.reg_date          AS regDate,
+      cs.update_date       AS updateDate
+    FROM center_services cs
+    WHERE cs.center_id = #{centerId}
+    ORDER BY cs.id ASC
+  </select>
+
+  <insert id="insertCenterService" parameterType="com.example.demo.vo.CenterService"
+          useGeneratedKeys="true" keyProperty="id">
+    INSERT INTO center_services
+      (center_id, therapy_type_code, service_name, target_age_min, target_age_max,
+       price_type, waitlist, waitlist_note, notes)
+    VALUES
+      (#{centerId}, #{therapyTypeCode}, #{serviceName}, #{targetAgeMin}, #{targetAgeMax},
+       #{priceType}, #{waitlist}, #{waitlistNote}, #{notes})
+  </insert>
+
+  <update id="updateCenterService" parameterType="com.example.demo.vo.CenterService">
+    UPDATE center_services SET
+      therapy_type_code = #{therapyTypeCode},
+      service_name      = #{serviceName},
+      target_age_min    = #{targetAgeMin},
+      target_age_max    = #{targetAgeMax},
+      price_type        = #{priceType},
+      waitlist          = #{waitlist},
+      waitlist_note     = #{waitlistNote},
+      notes             = #{notes}
+    WHERE id = #{id}
+  </update>
+
+  <delete id="deleteCenterService">
+    DELETE FROM center_services WHERE id = #{id}
+  </delete>
+
+  <delete id="deleteCenterServicesByCenterId">
+    DELETE FROM center_services WHERE center_id = #{centerId}
+  </delete>
+
+  <!-- ========= TherapyType ========= -->
+
+  <select id="getTherapyTypes" resultMap="therapyTypeResultMap">
+    SELECT
+      tt.code        AS code,
+      tt.title       AS title,
+      tt.description AS description,
+      tt.reg_date    AS regDate,
+      tt.update_date AS updateDate
+    FROM therapy_types tt
+    ORDER BY tt.code ASC
+  </select>
+
+  <select id="getTherapyTypesByCenterId" resultMap="therapyTypeResultMap">
+    SELECT DISTINCT
+      tt.code        AS code,
+      tt.title       AS title,
+      tt.description AS description,
+      tt.reg_date    AS regDate,
+      tt.update_date AS updateDate
+    FROM therapy_types tt
+    INNER JOIN center_services cs ON cs.therapy_type_code = tt.code
+    WHERE cs.center_id = #{centerId}
+    ORDER BY tt.code ASC
+  </select>
+
+  <!-- ========= Recommendation ========= -->
+
+  <!-- 단일 도메인 추천: domain_therapy_map → center_services → centers JOIN -->
+  <select id="getRecommendedCentersByDomain" resultMap="centerResultMap">
+    SELECT DISTINCT
+      c.id          AS id,
+      c.name        AS name,
+      c.center_type AS centerType,
+      c.phone       AS phone,
+      c.website     AS website,
+      c.sido        AS sido,
+      c.sigungu     AS sigungu,
+      c.address     AS address,
+      c.description AS description,
+      c.is_active   AS isActive,
+      c.reg_date    AS regDate,
+      c.update_date AS updateDate
+    FROM centers c
+    INNER JOIN center_services cs    ON cs.center_id          = c.id
+    INNER JOIN domain_therapy_map dtm ON dtm.therapy_type_code = cs.therapy_type_code
+    WHERE c.is_active = 1
+      AND dtm.domain_code = #{domainCode}
+    ORDER BY c.id DESC
+    LIMIT 10
+  </select>
+
+  <!--
+    복수 도메인 추천.
+    파라미터: @Param("list") List<String> domainCodes
+    → <foreach collection="list"> 사용.
+    추천 점수 = 해당 센터가 커버하는 매칭 도메인 수(많을수록 우선).
+    동률이면 id DESC.
+  -->
+  <select id="getRecommendedCentersByDomains" resultMap="centerResultMap">
+    SELECT
+      c.id          AS id,
+      c.name        AS name,
+      c.center_type AS centerType,
+      c.phone       AS phone,
+      c.website     AS website,
+      c.sido        AS sido,
+      c.sigungu     AS sigungu,
+      c.address     AS address,
+      c.description AS description,
+      c.is_active   AS isActive,
+      c.reg_date    AS regDate,
+      c.update_date AS updateDate,
+      COUNT(DISTINCT dtm.domain_code) AS matchScore
+    FROM centers c
+    INNER JOIN center_services cs    ON cs.center_id          = c.id
+    INNER JOIN domain_therapy_map dtm ON dtm.therapy_type_code = cs.therapy_type_code
+    WHERE c.is_active = 1
+      AND dtm.domain_code IN
+      <foreach collection="list" item="d" open="(" separator="," close=")">
+        #{d}
+      </foreach>
+    GROUP BY
+      c.id, c.name, c.center_type, c.phone, c.website,
+      c.sido, c.sigungu, c.address, c.description, c.is_active,
+      c.reg_date, c.update_date
+    ORDER BY matchScore DESC, c.id DESC
+    LIMIT 10
+  </select>
+
+</mapper>

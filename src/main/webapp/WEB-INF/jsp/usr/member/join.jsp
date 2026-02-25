@@ -50,6 +50,13 @@
   <%-- Spring form taglib: modelAttribute="joinForm" 이 모델에 있어야 렌더링 가능 --%>
   <form:form method="post" action="/usr/member/doJoin" modelAttribute="joinForm">
 
+    <%--
+      전역 오류(object-level) 표시:
+      - loginId/email 판별 불가 DB 중복(레이스 컨디션) 시 bindingResult.reject()가 여기에 출력됨
+      - path="" 는 글로벌 에러만 출력 (필드 에러 중복 없음)
+    --%>
+    <form:errors path="" cssClass="notice" element="div" delimiter="<br/>" />
+
     <%-- 아이디 --%>
     <div class="field">
       <label for="loginId">아이디 <span style="color:#e74c3c;">*</span></label>

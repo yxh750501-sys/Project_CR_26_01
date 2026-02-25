@@ -5,33 +5,55 @@
 
 <mapper namespace="com.example.demo.repository.UserRepository">
 
+  <!-- ID로 사용자 조회 -->
   <select id="getUserById" resultType="com.example.demo.vo.User">
     SELECT
-      id         AS id,
-      login_id   AS loginId,
-      login_pw   AS loginPw,
-      `ROLE`     AS role,
-      reg_date   AS regDate
+      id          AS id,
+      login_id    AS loginId,
+      login_pw    AS loginPw,
+      name        AS name,
+      email       AS email,
+      `ROLE`      AS role,
+      reg_date    AS regDate
     FROM users
     WHERE id = #{id}
   </select>
 
+  <!-- loginId로 사용자 조회 -->
   <select id="getUserByLoginId" resultType="com.example.demo.vo.User">
     SELECT
-      id         AS id,
-      login_id   AS loginId,
-      login_pw   AS loginPw,
-      `ROLE`     AS role,
-      reg_date   AS regDate
+      id          AS id,
+      login_id    AS loginId,
+      login_pw    AS loginPw,
+      name        AS name,
+      email       AS email,
+      `ROLE`      AS role,
+      reg_date    AS regDate
     FROM users
     WHERE login_id = #{loginId}
   </select>
 
+  <!-- loginId 중복 여부: 0=없음, 1=존재 → boolean 매핑 -->
+  <select id="existsByLoginId" resultType="boolean">
+    SELECT COUNT(*) > 0
+    FROM users
+    WHERE login_id = #{loginId}
+  </select>
+
+  <!-- email 중복 여부: 0=없음, 1=존재 → boolean 매핑 -->
+  <select id="existsByEmail" resultType="boolean">
+    SELECT COUNT(*) > 0
+    FROM users
+    WHERE email = #{email}
+  </select>
+
+  <!-- 신규 사용자 등록 (loginPw 는 BCrypt 해시값) -->
   <insert id="createUser">
-    INSERT INTO users (login_id, login_pw, `ROLE`, reg_date)
-    VALUES (#{loginId}, #{loginPw}, #{role}, NOW())
+    INSERT INTO users (login_id, login_pw, name, email, `ROLE`, reg_date)
+    VALUES (#{loginId}, #{loginPw}, #{name}, #{email}, #{role}, NOW())
   </insert>
 
+  <!-- 직전 INSERT의 auto-increment PK -->
   <select id="getLastInsertId" resultType="long">
     SELECT LAST_INSERT_ID()
   </select>

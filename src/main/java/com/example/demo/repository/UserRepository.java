@@ -8,11 +8,27 @@ import com.example.demo.vo.User;
 @Mapper
 public interface UserRepository {
 
-	User getUserById(@Param("id") long id);
+    User getUserById(@Param("id") long id);
 
-	User getUserByLoginId(@Param("loginId") String loginId);
+    User getUserByLoginId(@Param("loginId") String loginId);
 
-	int createUser(@Param("loginId") String loginId, @Param("loginPw") String loginPw, @Param("role") String role);
+    /** loginId 중복 여부 확인 */
+    boolean existsByLoginId(@Param("loginId") String loginId);
 
-	long getLastInsertId();
+    /** email 중복 여부 확인 */
+    boolean existsByEmail(@Param("email") String email);
+
+    /**
+     * 신규 사용자 등록.
+     * loginPw는 호출 전에 BCrypt 해싱된 값이어야 한다.
+     */
+    int createUser(
+            @Param("loginId") String loginId,
+            @Param("loginPw") String loginPw,
+            @Param("name")    String name,
+            @Param("email")   String email,
+            @Param("role")    String role
+    );
+
+    long getLastInsertId();
 }

@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import com.example.demo.repository.ChecklistResultRepository;
 import com.example.demo.vo.Center;
+import com.example.demo.vo.ChecklistDomain;
 import com.example.demo.vo.DomainStat;
 
 @Service
@@ -31,19 +32,29 @@ public class ChecklistResultService {
 	}
 
 	public List<DomainStat> getDomainStats(long runId) {
-		return checklistResultRepository.getDomainStatsByRunId(runId);
+		List<DomainStat> list = checklistResultRepository.getDomainStatsByRunId(runId);
+		for (DomainStat d : list) {
+			d.setDomainLabel(ChecklistDomain.labelOf(d.getDomainCode()));
+		}
+		return list;
 	}
 
+	/**
+	 * 낮은 avgScore = 약점 영역 = 우선 추천 대상.
+	 *
+	 * <p>defensive copy: 호출자가 넘긴 리스트를 수정하지 않는다.
+	 * (List.of() 등 불변 리스트를 전달해도 UnsupportedOperationException이 발생하지 않음)
+	 */
 	public List<String> pickTopDomains(List<DomainStat> stats, int topN) {
 		if (stats == null || stats.isEmpty()) return List.of();
 
-		stats.sort(Comparator
-				.comparingDouble(DomainStat::getAvgScore).reversed()
-				.thenComparingInt(DomainStat::getSumScore).reversed()
-				.thenComparingInt(DomainStat::getCnt).reversed());
+		List<DomainStat> sorted = new ArrayList<>(stats); // defensive copy
+		sorted.sort(Comparator
+				.comparingDouble(DomainStat::getAvgScore)
+				.thenComparingInt(DomainStat::getSumScore));
 
 		List<String> res = new ArrayList<>();
-		for (DomainStat s : stats) {
+		for (DomainStat s : sorted) {
 			if (s.getDomainCode() == null) continue;
 			res.add(s.getDomainCode());
 			if (res.size() >= topN) break;

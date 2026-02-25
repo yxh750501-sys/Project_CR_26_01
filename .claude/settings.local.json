@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd \"C:\\\\Users\\\\User\\\\IdeaProjects\\\\CareRoute\\\\backend_sts\" && ./mvnw test -q 2>&1)",
+      "Bash(tail:*)"
+    ]
+  }
+}

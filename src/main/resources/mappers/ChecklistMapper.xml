@@ -8,30 +8,30 @@
   <select id="getRunInfoForResult" resultType="map">
     SELECT
       r.id            AS runId,
-      r.memberId      AS memberId,
-      r.childId       AS childId,
+      r.user_id       AS userId,
+      r.child_id      AS childId,
       ch.name         AS childName,
-      r.checklistId   AS checklistId,
+      r.checklist_id  AS checklistId,
       cl.title        AS checklistTitle,
-      r.createdAt     AS createdAt
+      r.reg_date      AS createdAt
     FROM checklist_runs r
-    INNER JOIN children ch ON ch.id = r.childId
-    INNER JOIN checklists cl ON cl.id = r.checklistId
+    INNER JOIN children ch ON ch.id = r.child_id
+    INNER JOIN checklists cl ON cl.id = r.checklist_id
     WHERE r.id = #{runId}
-      AND r.memberId = #{memberId}
+      AND r.user_id = #{memberId}
   </select>
 
   <select id="getDomainStatsByRunId" resultType="com.example.demo.vo.DomainStat">
     SELECT
-      q.domainCode                        AS domainCode,
-      IFNULL(SUM(a.answerValue), 0)       AS totalScore,
-      IFNULL(AVG(a.answerValue), 0)       AS avgScore,
-      COUNT(*)                            AS questionCount
+      q.domain_code                       AS domainCode,
+      COUNT(*)                            AS cnt,
+      IFNULL(SUM(a.score), 0)             AS sumScore,
+      IFNULL(AVG(a.score), 0)             AS avgScore
     FROM checklist_answers a
-    INNER JOIN checklist_questions q ON q.id = a.questionId
-    WHERE a.runId = #{runId}
-    GROUP BY q.domainCode
-    ORDER BY avgScore DESC, totalScore DESC
+    INNER JOIN checklist_questions q ON q.id = a.question_id
+    WHERE a.run_id = #{runId}
+    GROUP BY q.domain_code
+    ORDER BY avgScore ASC, sumScore ASC
   </select>
 
 </mapper>

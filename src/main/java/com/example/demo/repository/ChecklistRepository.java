@@ -11,7 +11,7 @@ import com.example.demo.vo.DomainStat;
 @Mapper
 public interface ChecklistRepository {
 
-	Map<String, Object> getRunInfoForResult(@Param("memberId") int memberId, @Param("runId") int runId);
+	Map<String, Object> getRunInfoForResult(@Param("memberId") long memberId, @Param("runId") long runId);
 
-	List<DomainStat> getDomainStatsByRunId(@Param("runId") int runId);
+	List<DomainStat> getDomainStatsByRunId(@Param("runId") long runId);
 }

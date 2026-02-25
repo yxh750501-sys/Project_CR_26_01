@@ -5,6 +5,8 @@
 
 <mapper namespace="com.example.demo.repository.ChecklistStartRepository">
 
+  <!-- ──────────────────── 체크리스트 기본 정보 ──────────────────── -->
+
   <select id="getChecklistById" resultType="com.example.demo.vo.ChecklistForStart">
     SELECT
       id          AS id,
@@ -34,17 +36,57 @@
     ORDER BY sort_order ASC, id ASC
   </select>
 
+  <!-- ──────────────────── Run 조회 ──────────────────── -->
+
+  <!-- DRAFT 상태의 가장 최근 run id 조회 -->
   <select id="getLatestDraftRunId" resultType="long">
     SELECT id
     FROM checklist_runs
-    WHERE user_id = #{userId}
-      AND child_id = #{childId}
+    WHERE user_id      = #{userId}
+      AND child_id     = #{childId}
       AND checklist_id = #{checklistId}
-      AND `STATUS` = 'DRAFT'
+      AND `STATUS`     = 'DRAFT'
     ORDER BY id DESC
     LIMIT 1
   </select>
 
+  <!-- run이 속한 checklist_id (form 위변조 검증용) -->
+  <select id="getChecklistIdByRunId" resultType="long">
+    SELECT checklist_id
+    FROM checklist_runs
+    WHERE id = #{runId}
+    LIMIT 1
+  </select>
+
+  <!-- run 소유권 확인 -->
+  <select id="countRunOwnedByUser" resultType="int">
+    SELECT COUNT(*)
+    FROM checklist_runs
+    WHERE id      = #{runId}
+      AND user_id = #{userId}
+  </select>
+
+  <!-- run 상태 조회 -->
+  <select id="getRunStatusByIdAndUserId" resultType="string">
+    SELECT `STATUS`
+    FROM checklist_runs
+    WHERE id      = #{runId}
+      AND user_id = #{userId}
+    LIMIT 1
+  </select>
+
+  <!-- 아이가 없을 때 폴백용 첫 번째 자녀 id -->
+  <select id="getFirstChildIdByUserId" resultType="long">
+    SELECT id
+    FROM children
+    WHERE user_id = #{userId}
+    ORDER BY id ASC
+    LIMIT 1
+  </select>
+
+  <!-- ──────────────────── Run 생성 / 상태 변경 ──────────────────── -->
+
+  <!-- 새 DRAFT run 생성 -->
   <insert id="createRun">
     INSERT INTO checklist_runs
       (checklist_id, child_id, user_id, `STATUS`, total_score, reg_date, update_date)
@@ -52,10 +94,35 @@
       (#{checklistId}, #{childId}, #{userId}, 'DRAFT', 0, NOW(), NOW())
   </insert>
 
+  <!-- 직전 INSERT의 자동 생성 id (같은 커넥션/트랜잭션 내에서만 신뢰) -->
   <select id="getLastInsertId" resultType="long">
     SELECT LAST_INSERT_ID()
   </select>
 
+  <!--
+    DRAFT → SUBMITTED 전환.
+    STATUS = 'DRAFT' 조건을 추가해 이미 SUBMITTED된 run을 재UPDATE하지 않도록 방어한다.
+    affected rows = 0이면 이미 제출된 것으로 간주.
+  -->
+  <update id="submitRun">
+    UPDATE checklist_runs
+    SET
+      `STATUS`       = 'SUBMITTED',
+      total_score    = #{totalScore},
+      submitted_date = NOW(),
+      update_date    = NOW()
+    WHERE id       = #{runId}
+      AND `STATUS` = 'DRAFT'
+  </update>
+
+  <!-- ──────────────────── 답변 UPSERT ──────────────────── -->
+
+  <!--
+    (run_id, question_id) UNIQUE 제약 필요:
+      ALTER TABLE checklist_answers
+        ADD UNIQUE KEY uq_answer_run_question (run_id, question_id);
+    해당 제약이 없으면 ON DUPLICATE KEY UPDATE가 동작하지 않고 중복 INSERT됨.
+  -->
   <insert id="upsertAnswer">
     INSERT INTO checklist_answers
       (run_id, question_id, answer_value, answer_text, score, reg_date, update_date)
@@ -68,42 +135,11 @@
       update_date  = NOW()
   </insert>
 
-  <update id="submitRun">
-    UPDATE checklist_runs
-    SET
-      `STATUS` = 'SUBMITTED',
-      total_score = #{totalScore},
-      submitted_date = NOW(),
-      update_date = NOW()
-    WHERE id = #{runId}
-  </update>
-
-  <select id="getFirstChildIdByUserId" resultType="long">
-    SELECT id
-    FROM children
-    WHERE user_id = #{userId}
-    ORDER BY id ASC
-    LIMIT 1
-  </select>
-
-  <select id="countRunOwnedByUser" resultType="int">
-    SELECT COUNT(*)
-    FROM checklist_runs
-    WHERE id = #{runId}
-      AND user_id = #{userId}
-  </select>
-
-  <select id="getRunStatusByIdAndUserId" resultType="string">
-    SELECT `STATUS`
-    FROM checklist_runs
-    WHERE id = #{runId}
-      AND user_id = #{userId}
-    LIMIT 1
-  </select>
+  <!-- ──────────────────── 답변 조회 ──────────────────── -->
 
   <select id="getAnswersByRunId" resultType="com.example.demo.vo.AnswerForStart">
     SELECT
-      run_id     AS runId,
+      run_id      AS runId,
       question_id AS questionId,
       answer_value AS answerValue,
       answer_text  AS answerText,

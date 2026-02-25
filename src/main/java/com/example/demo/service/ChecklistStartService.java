@@ -24,6 +24,8 @@ public class ChecklistStartService {
 		this.checklistStartRepository = checklistStartRepository;
 	}
 
+	// ──────────────────── 체크리스트/문항 조회 ────────────────────
+
 	public ChecklistForStart getChecklist(long checklistId) {
 		return checklistStartRepository.getChecklistById(checklistId);
 	}
@@ -32,39 +34,68 @@ public class ChecklistStartService {
 		return checklistStartRepository.getQuestionsByChecklistId(checklistId);
 	}
 
+	// ──────────────────── 아이 선택 ────────────────────
+
+	/**
+	 * 세션 키가 여러 가지로 혼재하므로 우선순위 순으로 탐색.
+	 * childIdParam(URL) > 세션 > DB 첫 번째 아이 순.
+	 */
 	public Long resolveChildId(HttpSession session, long userId, Long childIdParam) {
 		if (childIdParam != null && childIdParam > 0) {
 			return childIdParam;
 		}
 
-		List<String> keys = Arrays.asList(
+		for (String key : Arrays.asList(
 				"selectedChildId",
 				"representativeChildId",
 				"repChildId",
 				"childId",
 				"selectedChildProfileId",
-				"loginedChildId"
-		);
-
-		for (String key : keys) {
+				"loginedChildId")) {
 			Long v = toLong(session.getAttribute(key));
-			if (v != null && v > 0) {
-				return v;
-			}
+			if (v != null && v > 0) return v;
 		}
 
 		return checklistStartRepository.getFirstChildIdByUserId(userId);
 	}
 
+	// ──────────────────── Run 생성/조회 ────────────────────
+
+	/**
+	 * 같은 (userId, childId, checklistId) 조합의 DRAFT run이 있으면 재사용,
+	 * 없으면 새로 생성한다.
+	 *
+	 * <p>안전성:
+	 * <ul>
+	 *   <li>@Transactional로 단일 트랜잭션 보장</li>
+	 *   <li>createRun() 후 LAST_INSERT_ID() 대신 getLatestDraftRunId()로 재확인 →
+	 *       극단적 동시 요청에서도 실제 DB에 저장된 ID를 반환</li>
+	 * </ul>
+	 */
 	@Transactional
 	public long getOrCreateDraftRun(long userId, long childId, long checklistId) {
 		Long existing = checklistStartRepository.getLatestDraftRunId(userId, childId, checklistId);
 		if (existing != null && existing > 0) {
 			return existing;
 		}
+
 		checklistStartRepository.createRun(checklistId, childId, userId);
-		return checklistStartRepository.getLastInsertId();
+
+		// LAST_INSERT_ID()는 같은 커넥션 안에서 안전하지만,
+		// 방어적으로 getLatestDraftRunId()로 재조회해 실제 저장된 ID를 사용한다.
+		Long created = checklistStartRepository.getLatestDraftRunId(userId, childId, checklistId);
+		if (created == null || created <= 0) {
+			// fallback: LAST_INSERT_ID() 사용
+			created = checklistStartRepository.getLastInsertId();
+		}
+		if (created == null || created <= 0) {
+			throw new IllegalStateException(
+					"DRAFT run 생성에 실패했습니다. (userId=" + userId + ", childId=" + childId + ")");
+		}
+		return created;
 	}
+
+	// ──────────────────── Run 상태/소유권 확인 ────────────────────
 
 	public boolean isRunOwnedByUser(long runId, long userId) {
 		return checklistStartRepository.countRunOwnedByUser(runId, userId) > 0;
@@ -75,27 +106,55 @@ public class ChecklistStartService {
 	}
 
 	/**
-	 * ★ 핵심: JSP에서 숫자 키 타입(Integer/Long) 불일치가 자주 나서
-	 * 키를 String(questionId)로 통일해서 내려준다.
+	 * form에서 넘어온 checklistId가 run의 실제 checklistId와 일치하는지 검증.
+	 * 불일치 시 form 위변조로 간주.
+	 */
+	public boolean isChecklistIdMatchingRun(long runId, long checklistId) {
+		Long actual = checklistStartRepository.getChecklistIdByRunId(runId);
+		return actual != null && actual == checklistId;
+	}
+
+	// ──────────────────── 답변 조회 ────────────────────
+
+	/**
+	 * JSP에서 숫자 키 타입(Integer/Long) 불일치가 자주 발생하므로
+	 * 키를 String(questionId 문자열)으로 통일해서 반환한다.
+	 *
+	 * <p>방어: MyBatis는 보통 emptyList를 반환하지만, null 반환 및
+	 * 개별 항목 null을 명시적으로 처리한다.
 	 */
 	public Map<String, AnswerForStart> getAnswersMap(long runId) {
 		List<AnswerForStart> list = checklistStartRepository.getAnswersByRunId(runId);
 		Map<String, AnswerForStart> map = new HashMap<>();
+		if (list == null) return map;
 		for (AnswerForStart a : list) {
-			map.put(String.valueOf(a.getQuestionId()), a);
+			if (a != null && a.getQuestionId() > 0) {
+				map.put(String.valueOf(a.getQuestionId()), a);
+			}
 		}
 		return map;
 	}
 
+	// ──────────────────── 답변 저장 / 제출 ────────────────────
+
 	@Transactional
-	public void saveAnswer(long runId, long questionId, String answerValue, String answerText, Integer score) {
+	public void saveAnswer(long runId, long questionId,
+			String answerValue, String answerText, Integer score) {
 		checklistStartRepository.upsertAnswer(runId, questionId, answerValue, answerText, score);
 	}
 
+	/**
+	 * DRAFT → SUBMITTED 전환.
+	 * Mapper SQL에서 STATUS='DRAFT' 조건을 걸므로 이미 제출된 run은 영향받지 않는다.
+	 *
+	 * @return 실제로 상태가 변경된 rows 수 (0이면 이미 SUBMITTED 또는 존재하지 않음)
+	 */
 	@Transactional
-	public void submitRun(long runId, int totalScore) {
-		checklistStartRepository.submitRun(runId, totalScore);
+	public int submitRun(long runId, int totalScore) {
+		return checklistStartRepository.submitRun(runId, totalScore);
 	}
+
+	// ──────────────────── 유틸 ────────────────────
 
 	private Long toLong(Object v) {
 		if (v == null) return null;

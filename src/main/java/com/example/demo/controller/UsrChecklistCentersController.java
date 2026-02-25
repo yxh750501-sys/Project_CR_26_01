@@ -9,7 +9,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import com.example.demo.service.ChecklistResultService;
 import com.example.demo.vo.Center;
+import com.example.demo.vo.ChecklistDomain;
 import com.example.demo.vo.DomainStat;
+import com.example.demo.vo.TherapyTypeCode;
 
 import jakarta.servlet.http.HttpSession;
 
@@ -58,6 +60,8 @@ public class UsrChecklistCentersController {
 		model.addAttribute("topDomains", topDomains);
 		model.addAttribute("therapyTypeCodes", therapyTypeCodes);
 		model.addAttribute("centers", centers);
+		model.addAttribute("domainLabelMap", ChecklistDomain.getLabelMap());
+		model.addAttribute("therapyTypeLabelMap", TherapyTypeCode.getLabelMap());
 
 		return "usr/checklist/resultCenters";
 	}

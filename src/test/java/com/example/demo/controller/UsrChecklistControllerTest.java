@@ -26,6 +26,7 @@ import java.util.Set;
 import com.example.demo.config.GlobalExceptionHandler;
 import com.example.demo.service.ChecklistResultService;
 import com.example.demo.service.ChecklistService;
+import com.example.demo.service.ConsultationService;
 import com.example.demo.service.FavoriteService;
 
 /**
@@ -52,10 +53,14 @@ class UsrChecklistControllerTest {
     @Mock
     private FavoriteService favoriteService;
 
+    @Mock
+    private ConsultationService consultationService;
+
     @BeforeEach
     void setUp() {
         UsrChecklistController controller =
-                new UsrChecklistController(checklistService, checklistResultService, favoriteService);
+                new UsrChecklistController(checklistService, checklistResultService,
+                        favoriteService, consultationService);
 
         mockMvc = MockMvcBuilders
                 .standaloneSetup(controller)
@@ -168,7 +173,8 @@ class UsrChecklistControllerTest {
                .andExpect(view().name("usr/checklist/result"))
                .andExpect(model().attributeExists(
                        "runInfo", "domainStats", "runId",
-                       "riskLevel", "recommendationSummary", "favoriteCenterIds"));
+                       "riskLevel", "recommendationSummary",
+                       "favoriteCenterIds", "consultationPrep"));
     }
 
     // ─────────────────────────────────────────────────

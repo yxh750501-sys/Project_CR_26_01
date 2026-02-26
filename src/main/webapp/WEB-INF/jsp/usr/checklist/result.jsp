@@ -117,6 +117,24 @@
     .muted { color: #888; }
     .small { font-size: 12px; }
 
+    /* ── 상담 준비 패키지 ── */
+    .prep-section { margin-bottom: 14px; }
+    .prep-section:last-child { margin-bottom: 0; }
+    .prep-title { font-size: 13px; font-weight: 600; color: #555;
+                  margin-bottom: 6px; padding-bottom: 4px;
+                  border-bottom: 1px solid #f0f0f0; }
+    .evidence-list { margin: 0; padding: 0 0 0 18px; }
+    .evidence-list li { font-size: 13px; color: #444; margin-bottom: 5px;
+                        line-height: 1.5; }
+    .ev-domain { color: #2d4a9a; font-size: 11px; font-weight: 600;
+                 margin-right: 4px; }
+    .ev-answer { color: #c0392b; font-size: 12px; margin-left: 4px; }
+    .question-list { margin: 0; padding: 0 0 0 20px; }
+    .question-list li { font-size: 13px; color: #333; margin-bottom: 6px;
+                        line-height: 1.55; }
+    .prep-note { font-size: 12px; color: #888; margin-bottom: 12px;
+                 line-height: 1.5; }
+
     @media (max-width: 480px) {
       .summary-row { gap: 16px; }
       .summary-item .val { font-size: 19px; }
@@ -349,7 +367,67 @@
   </div>
 
   <%-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-       ④ CTA — 다음 단계 버튼
+       ④ 상담 준비 패키지
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ --%>
+  <c:if test="${not empty consultationPrep.consultationQuestions}">
+    <div class="card">
+      <h2>상담 준비 패키지</h2>
+      <p class="prep-note">
+        체크리스트 응답을 바탕으로 전문가·상담사와 나눌 때 참고할 수 있는 자료입니다.
+        아래 내용은 권장·참고 목적이며, 전문가의 직접 관찰을 대신하지 않습니다.
+      </p>
+
+      <%-- 권장 상담 영역 --%>
+      <c:if test="${not empty consultationPrep.topDomains}">
+        <div class="prep-section">
+          <div class="prep-title">권장 상담 영역</div>
+          <div>
+            <c:forEach items="${consultationPrep.topDomains}" var="td">
+              <span class="tag tag-domain"><c:out value="${td.domainLabel}" /></span>
+            </c:forEach>
+          </div>
+        </div>
+      </c:if>
+
+      <%-- 관찰 근거 문항 --%>
+      <c:if test="${not empty consultationPrep.evidenceItems}">
+        <div class="prep-section">
+          <div class="prep-title">관찰 근거 (응답 기반)</div>
+          <ul class="evidence-list">
+            <c:forEach items="${consultationPrep.evidenceItems}" var="ev">
+              <li>
+                <span class="ev-domain">[<c:out value="${ev.domainLabel}" />]</span>
+                <c:out value="${ev.questionText}" />
+                <span class="ev-answer">
+                  <c:choose>
+                    <c:when test="${ev.answerValue eq '1'}">— 아직 어려워요</c:when>
+                    <c:when test="${ev.answerValue eq '2'}">— 거의 어려워요</c:when>
+                    <c:when test="${ev.answerValue eq '3'}">— 조금 어려워요</c:when>
+                    <c:otherwise>— 응답: <c:out value="${ev.answerValue}" /></c:otherwise>
+                  </c:choose>
+                </span>
+              </li>
+            </c:forEach>
+          </ul>
+        </div>
+      </c:if>
+
+      <%-- 전문가에게 여쭤볼 질문 --%>
+      <c:if test="${not empty consultationPrep.consultationQuestions}">
+        <div class="prep-section">
+          <div class="prep-title">전문가에게 여쭤볼 질문 (참고용)</div>
+          <ol class="question-list">
+            <c:forEach items="${consultationPrep.consultationQuestions}" var="cq">
+              <li><c:out value="${cq}" /></li>
+            </c:forEach>
+          </ol>
+        </div>
+      </c:if>
+    </div>
+  </c:if>
+
+  <%-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       ⑤ CTA — 다음 단계 버튼
        ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ --%>
   <div class="card">
     <h2>다음 단계</h2>

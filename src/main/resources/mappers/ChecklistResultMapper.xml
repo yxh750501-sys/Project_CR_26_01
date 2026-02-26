@@ -66,4 +66,33 @@
     LIMIT 50
   </select>
 
+
+  <!-- ──────────────────────────────────────────────────────────────────
+       상담 준비 패키지 — 관찰 근거 문항
+       SCALE5 응답 중 낮은 점수(어려움) 순으로 최대 limit건 반환.
+       score=5(모름)는 제외한다.
+       ────────────────────────────────────────────────────────────────── -->
+
+  <resultMap id="evidenceItemResultMap" type="com.example.demo.dto.EvidenceItem">
+    <result property="questionText" column="questionText"/>
+    <result property="answerValue"  column="answerValue"/>
+    <result property="score"        column="score"/>
+    <result property="domainCode"   column="domainCode"/>
+  </resultMap>
+
+  <select id="getLowestScoringAnswers" resultMap="evidenceItemResultMap">
+    SELECT
+      q.question_text  AS questionText,
+      a.answer_value   AS answerValue,
+      a.score          AS score,
+      q.domain_code    AS domainCode
+    FROM checklist_answers a
+    INNER JOIN checklist_questions q ON q.id = a.question_id
+    WHERE a.run_id         = #{runId}
+      AND q.response_type  = 'SCALE5'
+      AND a.score BETWEEN 1 AND 4
+    ORDER BY a.score ASC, q.domain_code ASC
+    LIMIT #{limit}
+  </select>
+
 </mapper>

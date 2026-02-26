@@ -1,5 +1,6 @@
 package com.example.demo.controller;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -10,8 +11,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.example.demo.constant.SessionConst;
+import com.example.demo.dto.ConsultationPrepDto;
 import com.example.demo.service.ChecklistResultService;
 import com.example.demo.service.ChecklistService;
+import com.example.demo.service.ConsultationService;
 import com.example.demo.service.FavoriteService;
 import com.example.demo.vo.Center;
 import com.example.demo.vo.ChecklistDomain;
@@ -26,13 +29,16 @@ public class UsrChecklistController {
 	private final ChecklistService       checklistService;
 	private final ChecklistResultService checklistResultService;
 	private final FavoriteService        favoriteService;
+	private final ConsultationService    consultationService;
 
 	public UsrChecklistController(ChecklistService checklistService,
 			ChecklistResultService checklistResultService,
-			FavoriteService favoriteService) {
+			FavoriteService favoriteService,
+			ConsultationService consultationService) {
 		this.checklistService       = checklistService;
 		this.checklistResultService = checklistResultService;
 		this.favoriteService        = favoriteService;
+		this.consultationService    = consultationService;
 	}
 
 	@RequestMapping("/usr/checklist/result")
@@ -73,6 +79,18 @@ public class UsrChecklistController {
 				recommendedDomains, domainLabelMap);
 		Set<Long> favoriteCenterIds = favoriteService.getFavoriteCenterIds(userId);
 
+		// 상담 준비 패키지 — 기본값 빈 DTO로 초기화하여 모델 속성을 항상 보장한다.
+		// 내부 오류 시 빈 DTO로 유지하여 기존 결과 화면을 깨뜨리지 않는다.
+		ConsultationPrepDto consultationPrep = emptyConsultationPrep(runId);
+		try {
+			ConsultationPrepDto fetched = consultationService.getConsultationPrep(runId, userId);
+			if (fetched != null) {
+				consultationPrep = fetched;
+			}
+		} catch (Exception ignored) {
+			// 상담 준비 패키지 생성 실패는 결과 화면 전체를 막지 않는다.
+		}
+
 		model.addAttribute("runInfo", runInfo);
 		model.addAttribute("domainStats", domainStats);
 		model.addAttribute("recommendedDomains", recommendedDomains);
@@ -83,8 +101,18 @@ public class UsrChecklistController {
 		model.addAttribute("riskLevel", riskLevel);
 		model.addAttribute("recommendationSummary", recommendationSummary);
 		model.addAttribute("favoriteCenterIds", favoriteCenterIds);
+		model.addAttribute("consultationPrep", consultationPrep);
 
 		return "usr/checklist/result";
+	}
+
+	private ConsultationPrepDto emptyConsultationPrep(long runId) {
+		ConsultationPrepDto prep = new ConsultationPrepDto();
+		prep.setRunId(runId);
+		prep.setTopDomains(Collections.emptyList());
+		prep.setEvidenceItems(Collections.emptyList());
+		prep.setConsultationQuestions(Collections.emptyList());
+		return prep;
 	}
 
 	private Long toLong(Object v) {

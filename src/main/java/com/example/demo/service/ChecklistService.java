@@ -68,4 +68,42 @@ public class ChecklistService {
 		}
 		return centerRepository.getRecommendedCentersByDomains(domainCodes);
 	}
+
+	/**
+	 * 위험도 계산.
+	 *
+	 * <p>avgScore &le; 2.0 인 도메인(우선 지원 권장) 수 기준:
+	 * <ul>
+	 *   <li>3개 이상 → "HIGH"</li>
+	 *   <li>1~2개   → "MODERATE"</li>
+	 *   <li>0개     → "LOW"</li>
+	 * </ul>
+	 */
+	public String calculateRiskLevel(List<DomainStat> stats) {
+		if (stats == null || stats.isEmpty()) return "LOW";
+		long highPriorityCnt = stats.stream()
+				.filter(s -> s.getAvgScore() > 0 && s.getAvgScore() <= 2.0)
+				.count();
+		if (highPriorityCnt >= 3) return "HIGH";
+		if (highPriorityCnt >= 1) return "MODERATE";
+		return "LOW";
+	}
+
+	/**
+	 * 권장 다음 단계 한 줄 요약 메시지.
+	 *
+	 * @param recommendedDomains pickRecommendedDomains() 결과
+	 * @param labelMap           ChecklistDomain.getLabelMap() 결과
+	 */
+	public String getRecommendationSummary(List<String> recommendedDomains,
+	                                        Map<String, String> labelMap) {
+		if (recommendedDomains == null || recommendedDomains.isEmpty()) {
+			return "모든 영역에서 양호한 수행을 보이고 있습니다.";
+		}
+		List<String> labels = new ArrayList<>();
+		for (String d : recommendedDomains) {
+			labels.add(labelMap.getOrDefault(d, d));
+		}
+		return String.join(" · ", labels) + " 영역 전문 기관 방문을 권장합니다.";
+	}
 }

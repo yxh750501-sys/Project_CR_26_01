@@ -141,7 +141,7 @@ class UsrChecklistControllerTest {
     // ─────────────────────────────────────────────────
 
     @Test
-    @DisplayName("정상 흐름 — 결과 뷰 반환")
+    @DisplayName("정상 흐름 — 결과 뷰 반환 + riskLevel/recommendationSummary 모델 포함")
     void showResult_normalFlow_showsResultView() throws Exception {
         when(checklistResultService.isOwned(1L, 42L)).thenReturn(true);
         when(checklistResultService.isSubmitted(1L)).thenReturn(true);
@@ -150,13 +150,18 @@ class UsrChecklistControllerTest {
         when(checklistService.getDomainStatsByRunId(1L)).thenReturn(List.of());
         when(checklistService.pickRecommendedDomains(any())).thenReturn(List.of());
         when(checklistService.getRecommendedCentersByDomains(any())).thenReturn(List.of());
+        when(checklistService.calculateRiskLevel(any())).thenReturn("LOW");
+        when(checklistService.getRecommendationSummary(any(), any()))
+                .thenReturn("모든 영역에서 양호한 수행을 보이고 있습니다.");
 
         mockMvc.perform(get("/usr/checklist/result")
                 .param("runId", "1")
                 .sessionAttr("loginedUserId", 42L))
                .andExpect(status().isOk())
                .andExpect(view().name("usr/checklist/result"))
-               .andExpect(model().attributeExists("runInfo", "domainStats", "runId"));
+               .andExpect(model().attributeExists(
+                       "runInfo", "domainStats", "runId",
+                       "riskLevel", "recommendationSummary"));
     }
 
     // ─────────────────────────────────────────────────

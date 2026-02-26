@@ -13,7 +13,9 @@
       ch.name         AS childName,
       r.checklist_id  AS checklistId,
       cl.title        AS checklistTitle,
-      r.reg_date      AS createdAt
+      r.reg_date      AS createdAt,
+      r.total_score   AS totalScore,
+      r.update_date   AS submittedAt
     FROM checklist_runs r
     INNER JOIN children ch ON ch.id = r.child_id
     INNER JOIN checklists cl ON cl.id = r.checklist_id

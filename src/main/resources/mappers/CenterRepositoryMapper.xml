@@ -17,9 +17,11 @@
     <result property="sigungu"     column="sigungu"/>
     <result property="address"     column="address"/>
     <result property="description" column="description"/>
-    <result property="isActive"    column="isActive"/>
-    <result property="regDate"     column="regDate"/>
-    <result property="updateDate"  column="updateDate"/>
+    <result property="isActive"       column="isActive"/>
+    <result property="regDate"        column="regDate"/>
+    <result property="updateDate"     column="updateDate"/>
+    <result property="matchScore"     column="matchScore"/>
+    <result property="matchedDomains" column="matchedDomains"/>
     <collection property="services"
                 ofType="com.example.demo.vo.CenterService"
                 column="id"
@@ -267,7 +269,8 @@
       c.is_active   AS isActive,
       c.reg_date    AS regDate,
       c.update_date AS updateDate,
-      COUNT(DISTINCT dtm.domain_code) AS matchScore
+      COUNT(DISTINCT dtm.domain_code)                                        AS matchScore,
+      GROUP_CONCAT(DISTINCT dtm.domain_code ORDER BY dtm.domain_code) AS matchedDomains
     FROM centers c
     INNER JOIN center_services cs    ON cs.center_id          = c.id
     INNER JOIN domain_therapy_map dtm ON dtm.therapy_type_code = cs.therapy_type_code

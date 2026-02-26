@@ -61,13 +61,20 @@ public class UsrChecklistController {
 		List<String> recommendedDomains = checklistService.pickRecommendedDomains(domainStats);
 		List<Center> centers = checklistService.getRecommendedCentersByDomains(recommendedDomains);
 
+		Map<String, String> domainLabelMap = ChecklistDomain.getLabelMap();
+		String riskLevel = checklistService.calculateRiskLevel(domainStats);
+		String recommendationSummary = checklistService.getRecommendationSummary(
+				recommendedDomains, domainLabelMap);
+
 		model.addAttribute("runInfo", runInfo);
 		model.addAttribute("domainStats", domainStats);
 		model.addAttribute("recommendedDomains", recommendedDomains);
 		model.addAttribute("centers", centers);
 		model.addAttribute("runId", runId);
-		model.addAttribute("domainLabelMap", ChecklistDomain.getLabelMap());
+		model.addAttribute("domainLabelMap", domainLabelMap);
 		model.addAttribute("therapyTypeLabelMap", TherapyTypeCode.getLabelMap());
+		model.addAttribute("riskLevel", riskLevel);
+		model.addAttribute("recommendationSummary", recommendationSummary);
 
 		return "usr/checklist/result";
 	}

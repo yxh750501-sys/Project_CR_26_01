@@ -13,6 +13,8 @@ public class Center {
     private String address;
     private String description;
     private String therapyTypeCodes; // 쉼표로 합쳐진 코드들 (ChecklistResultMapper용)
+    private int matchScore;          // 추천 쿼리: COUNT(DISTINCT 매칭 도메인 수)
+    private String matchedDomains;   // 추천 쿼리: GROUP_CONCAT(매칭 도메인 코드, 쉼표 구분)
     private boolean isActive;
     private String regDate;
     private String updateDate;
@@ -97,6 +99,22 @@ public class Center {
 
     public void setTherapyTypeCodes(String therapyTypeCodes) {
         this.therapyTypeCodes = therapyTypeCodes;
+    }
+
+    public int getMatchScore() {
+        return matchScore;
+    }
+
+    public void setMatchScore(int matchScore) {
+        this.matchScore = matchScore;
+    }
+
+    public String getMatchedDomains() {
+        return matchedDomains;
+    }
+
+    public void setMatchedDomains(String matchedDomains) {
+        this.matchedDomains = matchedDomains;
     }
 
     public boolean isActive() {

@@ -36,4 +36,57 @@
     ORDER BY avgScore ASC, sumScore ASC
   </select>
 
+
+  <!-- ──────────────────────────────────────────────────────────────────
+       내 기록 허브 페이지용 쿼리
+       ────────────────────────────────────────────────────────────────── -->
+
+  <resultMap id="runSummaryResultMap" type="com.example.demo.dto.RunSummaryDto">
+    <id     property="runId"          column="runId"/>
+    <result property="childId"        column="childId"/>
+    <result property="childName"      column="childName"/>
+    <result property="checklistTitle" column="checklistTitle"/>
+    <result property="totalScore"     column="totalScore"/>
+    <result property="displayDate"    column="displayDate"/>
+    <result property="status"         column="status"/>
+  </resultMap>
+
+  <select id="getRecentSubmittedRuns" resultMap="runSummaryResultMap">
+    SELECT
+      r.id                                         AS runId,
+      r.child_id                                   AS childId,
+      ch.name                                      AS childName,
+      cl.title                                     AS checklistTitle,
+      r.total_score                                AS totalScore,
+      DATE_FORMAT(r.update_date, '%Y-%m-%d')       AS displayDate,
+      r.`status`                                   AS status
+    FROM checklist_runs r
+    INNER JOIN children   ch ON ch.id = r.child_id
+    INNER JOIN checklists cl ON cl.id = r.checklist_id
+    WHERE r.user_id = #{userId}
+      AND r.`status` = 'SUBMITTED'
+      <if test="childId != 0">AND r.child_id = #{childId}</if>
+    ORDER BY r.update_date DESC
+    LIMIT #{limit}
+  </select>
+
+  <select id="getDraftRuns" resultMap="runSummaryResultMap">
+    SELECT
+      r.id                                         AS runId,
+      r.child_id                                   AS childId,
+      ch.name                                      AS childName,
+      cl.title                                     AS checklistTitle,
+      r.total_score                                AS totalScore,
+      DATE_FORMAT(r.update_date, '%Y-%m-%d')       AS displayDate,
+      r.`status`                                   AS status
+    FROM checklist_runs r
+    INNER JOIN children   ch ON ch.id = r.child_id
+    INNER JOIN checklists cl ON cl.id = r.checklist_id
+    WHERE r.user_id = #{userId}
+      AND r.`status` = 'DRAFT'
+      <if test="childId != 0">AND r.child_id = #{childId}</if>
+    ORDER BY r.update_date DESC
+    LIMIT #{limit}
+  </select>
+
 </mapper>

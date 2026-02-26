@@ -1,0 +1,103 @@
+diff --git a/src/main/java/com/example/demo/repository/ChecklistRepository.java b/src/main/java/com/example/demo/repository/ChecklistRepository.java
+index 20c5ecd..3557b5d 100644
+--- a/src/main/java/com/example/demo/repository/ChecklistRepository.java
++++ b/src/main/java/com/example/demo/repository/ChecklistRepository.java
+@@ -6,6 +6,7 @@ import java.util.Map;
+ import org.apache.ibatis.annotations.Mapper;
+ import org.apache.ibatis.annotations.Param;
+ 
++import com.example.demo.dto.RunSummaryDto;
+ import com.example.demo.vo.DomainStat;
+ 
+ @Mapper
+@@ -14,4 +15,28 @@ public interface ChecklistRepository {
+ 	Map<String, Object> getRunInfoForResult(@Param("memberId") long memberId, @Param("runId") long runId);
+ 
+ 	List<DomainStat> getDomainStatsByRunId(@Param("runId") long runId);
++
++	/**
++	 * 사용자의 최근 SUBMITTED 실행 목록.
++	 *
++	 * @param userId  로그인 사용자 ID
++	 * @param childId 0이면 전체 아이, &gt;0이면 해당 아이만
++	 * @param limit   최대 건수
++	 */
++	List<RunSummaryDto> getRecentSubmittedRuns(
++			@Param("userId") long userId,
++			@Param("childId") long childId,
++			@Param("limit") int limit);
++
++	/**
++	 * 사용자의 최근 DRAFT 실행 목록.
++	 *
++	 * @param userId  로그인 사용자 ID
++	 * @param childId 0이면 전체 아이, &gt;0이면 해당 아이만
++	 * @param limit   최대 건수
++	 */
++	List<RunSummaryDto> getDraftRuns(
++			@Param("userId") long userId,
++			@Param("childId") long childId,
++			@Param("limit") int limit);
+ }
+diff --git a/src/main/resources/mappers/ChecklistMapper.xml b/src/main/resources/mappers/ChecklistMapper.xml
+index e34732f..efa7341 100644
+--- a/src/main/resources/mappers/ChecklistMapper.xml
++++ b/src/main/resources/mappers/ChecklistMapper.xml
+@@ -36,4 +36,57 @@
+     ORDER BY avgScore ASC, sumScore ASC
+   </select>
+ 
++
++  <!-- ──────────────────────────────────────────────────────────────────
++       내 기록 허브 페이지용 쿼리
++       ────────────────────────────────────────────────────────────────── -->
++
++  <resultMap id="runSummaryResultMap" type="com.example.demo.dto.RunSummaryDto">
++    <id     property="runId"          column="runId"/>
++    <result property="childId"        column="childId"/>
++    <result property="childName"      column="childName"/>
++    <result property="checklistTitle" column="checklistTitle"/>
++    <result property="totalScore"     column="totalScore"/>
++    <result property="displayDate"    column="displayDate"/>
++    <result property="status"         column="status"/>
++  </resultMap>
++
++  <select id="getRecentSubmittedRuns" resultMap="runSummaryResultMap">
++    SELECT
++      r.id                                         AS runId,
++      r.child_id                                   AS childId,
++      ch.name                                      AS childName,
++      cl.title                                     AS checklistTitle,
++      r.total_score                                AS totalScore,
++      DATE_FORMAT(r.update_date, '%Y-%m-%d')       AS displayDate,
++      r.`status`                                   AS status
++    FROM checklist_runs r
++    INNER JOIN children   ch ON ch.id = r.child_id
++    INNER JOIN checklists cl ON cl.id = r.checklist_id
++    WHERE r.user_id = #{userId}
++      AND r.`status` = 'SUBMITTED'
++      <if test="childId != 0">AND r.child_id = #{childId}</if>
++    ORDER BY r.update_date DESC
++    LIMIT #{limit}
++  </select>
++
++  <select id="getDraftRuns" resultMap="runSummaryResultMap">
++    SELECT
++      r.id                                         AS runId,
++      r.child_id                                   AS childId,
++      ch.name                                      AS childName,
++      cl.title                                     AS checklistTitle,
++      r.total_score                                AS totalScore,
++      DATE_FORMAT(r.update_date, '%Y-%m-%d')       AS displayDate,
++      r.`status`                                   AS status
++    FROM checklist_runs r
++    INNER JOIN children   ch ON ch.id = r.child_id
++    INNER JOIN checklists cl ON cl.id = r.checklist_id
++    WHERE r.user_id = #{userId}
++      AND r.`status` = 'DRAFT'
++      <if test="childId != 0">AND r.child_id = #{childId}</if>
++    ORDER BY r.update_date DESC
++    LIMIT #{limit}
++  </select>
++
+ </mapper>

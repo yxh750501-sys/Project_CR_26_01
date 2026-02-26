@@ -25,7 +25,7 @@ public class JoinForm {
     private String email;
 
     @NotBlank(message = "비밀번호를 입력해 주세요.")
-    @Size(min = 8, message = "비밀번호는 8자 이상이어야 합니다.")
+    @Size(min = 8, max = 64, message = "비밀번호는 8~64자로 입력해 주세요.")
     private String loginPw;
 
     @NotBlank(message = "비밀번호 확인을 입력해 주세요.")

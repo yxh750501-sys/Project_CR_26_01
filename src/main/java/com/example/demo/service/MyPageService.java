@@ -63,7 +63,7 @@ public class MyPageService {
      * @param userId 로그인 사용자 ID
      */
     public List<Center> getFavoriteCenters(long userId) {
-        List<Center> all = favoriteService.getFavoriteCenters((long) userId);
+        List<Center> all = favoriteService.getFavoriteCenters(userId);
         if (all == null || all.isEmpty()) return Collections.emptyList();
         return all.size() > FAVORITE_CENTER_LIMIT ? all.subList(0, FAVORITE_CENTER_LIMIT) : all;
     }

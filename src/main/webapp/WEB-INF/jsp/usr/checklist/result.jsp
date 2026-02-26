@@ -105,6 +105,15 @@
     .btn-secondary { background: #fff; color: #4a90d9; border: 1px solid #4a90d9; }
     .btn:hover { opacity: .88; }
 
+    /* ── 즐겨찾기 버튼 ── */
+    .fav-btn {
+      background: none; border: none; font-size: 22px; cursor: pointer;
+      color: #ccc; padding: 0; line-height: 1; float: right;
+      transition: color .2s;
+    }
+    .fav-btn.favorited { color: #f39c12; }
+    .fav-btn:hover     { color: #f39c12; }
+
     .muted { color: #888; }
     .small { font-size: 12px; }
 
@@ -261,12 +270,21 @@
         <c:forEach items="${centers}" var="ctr">
           <div class="center-card">
 
-            <%-- 센터 헤더: 이름 + 매칭 배지 --%>
+            <%-- 센터 헤더: 이름 + 매칭 배지 + 즐겨찾기 --%>
             <div class="center-header">
               <span class="center-name"><c:out value="${ctr.name}" /></span>
-              <c:if test="${ctr.matchScore gt 0}">
-                <span class="match-badge">${ctr.matchScore}개 영역 매칭</span>
-              </c:if>
+              <div style="display:flex;align-items:center;gap:6px;">
+                <c:if test="${ctr.matchScore gt 0}">
+                  <span class="match-badge">${ctr.matchScore}개 영역 매칭</span>
+                </c:if>
+                <c:set var="isFav" value="${not empty favoriteCenterIds and favoriteCenterIds.contains(ctr.id)}" />
+                <button class="fav-btn ${isFav ? 'favorited' : ''}"
+                        onclick="toggleFav(this, ${ctr.id})"
+                        title="${isFav ? '즐겨찾기 해제' : '즐겨찾기 추가'}"
+                        aria-label="${isFav ? '즐겨찾기 해제' : '즐겨찾기 추가'}">
+                  ${isFav ? '★' : '☆'}
+                </button>
+              </div>
             </div>
 
             <%-- 지역 / 연락처 --%>
@@ -344,5 +362,27 @@
   </div>
 
 </div>
+<script>
+function toggleFav(btn, centerId) {
+  fetch('/usr/center/doToggleFavorite', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+    body: 'centerId=' + centerId
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.favorited) {
+      btn.classList.add('favorited');
+      btn.textContent = '★';
+      btn.title = '즐겨찾기 해제';
+    } else {
+      btn.classList.remove('favorited');
+      btn.textContent = '☆';
+      btn.title = '즐겨찾기 추가';
+    }
+  })
+  .catch(() => alert('즐겨찾기 처리 중 오류가 발생했습니다.'));
+}
+</script>
 </body>
 </html>

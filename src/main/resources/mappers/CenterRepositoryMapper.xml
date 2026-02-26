@@ -55,6 +55,27 @@
     <result property="updateDate"  column="updateDate"/>
   </resultMap>
 
+  <!--
+    센터 목록/검색용 평탄(flat) ResultMap.
+    sub-select 컬렉션 없이 therapyTypeCodes(GROUP_CONCAT)만 포함.
+    FavoriteMapper.xml 등 다른 매퍼에서 cross-namespace 참조 가능.
+  -->
+  <resultMap id="centerFlatResultMap" type="com.example.demo.vo.Center">
+    <id   property="id"               column="id"/>
+    <result property="name"            column="name"/>
+    <result property="centerType"      column="centerType"/>
+    <result property="phone"           column="phone"/>
+    <result property="website"         column="website"/>
+    <result property="sido"            column="sido"/>
+    <result property="sigungu"         column="sigungu"/>
+    <result property="address"         column="address"/>
+    <result property="description"     column="description"/>
+    <result property="isActive"        column="isActive"/>
+    <result property="regDate"         column="regDate"/>
+    <result property="updateDate"      column="updateDate"/>
+    <result property="therapyTypeCodes" column="therapyTypeCodes"/>
+  </resultMap>
+
   <!-- ========= Center CRUD ========= -->
 
   <select id="getCenterById" parameterType="int" resultMap="centerResultMap">
@@ -220,6 +241,77 @@
     INNER JOIN center_services cs ON cs.therapy_type_code = tt.code
     WHERE cs.center_id = #{centerId}
     ORDER BY tt.code ASC
+  </select>
+
+  <!-- ========= 목록/필터/페이지네이션 ========= -->
+
+  <!--
+    필터 조건 개수 카운트 (페이지네이션 totalPages 계산용).
+    파라미터: keyword(String), sido(String), domain(String)
+  -->
+  <select id="countCentersFiltered" resultType="int">
+    SELECT COUNT(DISTINCT c.id)
+    FROM centers c
+    <if test="domain != null and domain != ''">
+      LEFT JOIN center_services cs    ON cs.center_id          = c.id
+      LEFT JOIN domain_therapy_map dtm ON dtm.therapy_type_code = cs.therapy_type_code
+    </if>
+    WHERE c.is_active = 1
+    <if test="keyword != null and keyword != ''">
+      AND (c.name    LIKE CONCAT('%', #{keyword}, '%')
+           OR c.address LIKE CONCAT('%', #{keyword}, '%'))
+    </if>
+    <if test="sido != null and sido != ''">
+      AND (c.sido    LIKE CONCAT('%', #{sido}, '%')
+           OR c.sigungu LIKE CONCAT('%', #{sido}, '%'))
+    </if>
+    <if test="domain != null and domain != ''">
+      AND dtm.domain_code = #{domain}
+    </if>
+  </select>
+
+  <!--
+    필터 + 페이지네이션 센터 목록.
+    파라미터: keyword, sido, domain, offset, size
+    반환: therapyTypeCodes(GROUP_CONCAT) 포함 평탄 결과
+  -->
+  <select id="searchCentersFiltered" resultMap="centerFlatResultMap">
+    SELECT
+      c.id          AS id,
+      c.name        AS name,
+      c.center_type AS centerType,
+      c.phone       AS phone,
+      c.website     AS website,
+      c.sido        AS sido,
+      c.sigungu     AS sigungu,
+      c.address     AS address,
+      c.description AS description,
+      c.is_active   AS isActive,
+      c.reg_date    AS regDate,
+      c.update_date AS updateDate,
+      GROUP_CONCAT(DISTINCT cs2.therapy_type_code ORDER BY cs2.therapy_type_code) AS therapyTypeCodes
+    FROM centers c
+    <if test="domain != null and domain != ''">
+      INNER JOIN center_services cs_f   ON cs_f.center_id          = c.id
+      INNER JOIN domain_therapy_map dtm  ON dtm.therapy_type_code  = cs_f.therapy_type_code
+                                        AND dtm.domain_code         = #{domain}
+    </if>
+    LEFT JOIN center_services cs2 ON cs2.center_id = c.id
+    WHERE c.is_active = 1
+    <if test="keyword != null and keyword != ''">
+      AND (c.name    LIKE CONCAT('%', #{keyword}, '%')
+           OR c.address LIKE CONCAT('%', #{keyword}, '%'))
+    </if>
+    <if test="sido != null and sido != ''">
+      AND (c.sido    LIKE CONCAT('%', #{sido}, '%')
+           OR c.sigungu LIKE CONCAT('%', #{sido}, '%'))
+    </if>
+    GROUP BY
+      c.id, c.name, c.center_type, c.phone, c.website,
+      c.sido, c.sigungu, c.address, c.description, c.is_active,
+      c.reg_date, c.update_date
+    ORDER BY c.id DESC
+    LIMIT #{offset}, #{size}
   </select>
 
   <!-- ========= Recommendation ========= -->

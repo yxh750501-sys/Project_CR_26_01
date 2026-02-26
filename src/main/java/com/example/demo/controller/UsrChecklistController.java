@@ -2,14 +2,17 @@ package com.example.demo.controller;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import com.example.demo.constant.SessionConst;
 import com.example.demo.service.ChecklistResultService;
 import com.example.demo.service.ChecklistService;
+import com.example.demo.service.FavoriteService;
 import com.example.demo.vo.Center;
 import com.example.demo.vo.ChecklistDomain;
 import com.example.demo.vo.DomainStat;
@@ -20,19 +23,22 @@ import jakarta.servlet.http.HttpSession;
 @Controller
 public class UsrChecklistController {
 
-	private final ChecklistService checklistService;
+	private final ChecklistService       checklistService;
 	private final ChecklistResultService checklistResultService;
+	private final FavoriteService        favoriteService;
 
 	public UsrChecklistController(ChecklistService checklistService,
-			ChecklistResultService checklistResultService) {
-		this.checklistService = checklistService;
+			ChecklistResultService checklistResultService,
+			FavoriteService favoriteService) {
+		this.checklistService       = checklistService;
 		this.checklistResultService = checklistResultService;
+		this.favoriteService        = favoriteService;
 	}
 
 	@RequestMapping("/usr/checklist/result")
 	public String showResult(@RequestParam("runId") long runId, HttpSession session, Model model) {
 
-		Long userId = toLong(session.getAttribute("loginedUserId"));
+		Long userId = toLong(session.getAttribute(SessionConst.LOGINED_USER_ID));
 		if (userId == null || userId <= 0) {
 			return "redirect:/usr/member/login";
 		}
@@ -65,6 +71,7 @@ public class UsrChecklistController {
 		String riskLevel = checklistService.calculateRiskLevel(domainStats);
 		String recommendationSummary = checklistService.getRecommendationSummary(
 				recommendedDomains, domainLabelMap);
+		Set<Long> favoriteCenterIds = favoriteService.getFavoriteCenterIds(userId);
 
 		model.addAttribute("runInfo", runInfo);
 		model.addAttribute("domainStats", domainStats);
@@ -75,6 +82,7 @@ public class UsrChecklistController {
 		model.addAttribute("therapyTypeLabelMap", TherapyTypeCode.getLabelMap());
 		model.addAttribute("riskLevel", riskLevel);
 		model.addAttribute("recommendationSummary", recommendationSummary);
+		model.addAttribute("favoriteCenterIds", favoriteCenterIds);
 
 		return "usr/checklist/result";
 	}

@@ -21,9 +21,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import java.util.Set;
+
 import com.example.demo.config.GlobalExceptionHandler;
 import com.example.demo.service.ChecklistResultService;
 import com.example.demo.service.ChecklistService;
+import com.example.demo.service.FavoriteService;
 
 /**
  * UsrChecklistController 스모크 테스트.
@@ -46,10 +49,13 @@ class UsrChecklistControllerTest {
     @Mock
     private ChecklistResultService checklistResultService;
 
+    @Mock
+    private FavoriteService favoriteService;
+
     @BeforeEach
     void setUp() {
         UsrChecklistController controller =
-                new UsrChecklistController(checklistService, checklistResultService);
+                new UsrChecklistController(checklistService, checklistResultService, favoriteService);
 
         mockMvc = MockMvcBuilders
                 .standaloneSetup(controller)
@@ -153,6 +159,7 @@ class UsrChecklistControllerTest {
         when(checklistService.calculateRiskLevel(any())).thenReturn("LOW");
         when(checklistService.getRecommendationSummary(any(), any()))
                 .thenReturn("모든 영역에서 양호한 수행을 보이고 있습니다.");
+        when(favoriteService.getFavoriteCenterIds(42L)).thenReturn(Set.of());
 
         mockMvc.perform(get("/usr/checklist/result")
                 .param("runId", "1")
@@ -161,7 +168,7 @@ class UsrChecklistControllerTest {
                .andExpect(view().name("usr/checklist/result"))
                .andExpect(model().attributeExists(
                        "runInfo", "domainStats", "runId",
-                       "riskLevel", "recommendationSummary"));
+                       "riskLevel", "recommendationSummary", "favoriteCenterIds"));
     }
 
     // ─────────────────────────────────────────────────

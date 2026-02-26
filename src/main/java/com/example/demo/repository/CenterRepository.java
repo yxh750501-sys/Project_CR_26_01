@@ -40,4 +40,16 @@ public interface CenterRepository {
 	List<Center> getRecommendedCentersByDomain(@Param("domainCode") String domainCode);
 
 	List<Center> getRecommendedCentersByDomains(@Param("list") List<String> domainCodes);
+
+	/** 필터 조합에 해당하는 센터 총 수 (페이지네이션 계산용). */
+	int countCentersFiltered(@Param("keyword") String keyword,
+	                          @Param("sido") String sido,
+	                          @Param("domain") String domain);
+
+	/** 필터 + 페이지네이션 센터 목록 (therapyTypeCodes 포함 평탄 결과). */
+	List<Center> searchCentersFiltered(@Param("keyword") String keyword,
+	                                    @Param("sido") String sido,
+	                                    @Param("domain") String domain,
+	                                    @Param("offset") int offset,
+	                                    @Param("size") int size);
 }

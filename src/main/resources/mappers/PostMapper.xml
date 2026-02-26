@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.demo.repository.PostRepository">
+
+  <!-- 게시글 상세 조회 (authorName JOIN 포함) -->
+  <select id="findById" resultType="com.example.demo.vo.Post">
+    SELECT
+      p.id           AS id,
+      p.board_type   AS boardType,
+      p.category     AS category,
+      p.title        AS title,
+      p.body         AS body,
+      p.member_id    AS memberId,
+      u.name         AS authorName,
+      p.start_date   AS startDate,
+      p.end_date     AS endDate,
+      p.location     AS location,
+      p.fee          AS fee,
+      p.max_people   AS maxPeople,
+      p.apply_url    AS applyUrl,
+      DATE_FORMAT(p.created_at, '%Y-%m-%d %H:%i') AS createdAt,
+      DATE_FORMAT(p.updated_at, '%Y-%m-%d %H:%i') AS updatedAt
+    FROM post p
+    LEFT JOIN users u ON u.id = p.member_id
+    WHERE p.id = #{id}
+  </select>
+
+  <!-- 게시판 목록 (페이지네이션, body 미포함) -->
+  <select id="findPageByBoard" resultType="com.example.demo.vo.Post">
+    SELECT
+      p.id           AS id,
+      p.board_type   AS boardType,
+      p.category     AS category,
+      p.title        AS title,
+      p.member_id    AS memberId,
+      u.name         AS authorName,
+      p.start_date   AS startDate,
+      p.end_date     AS endDate,
+      p.location     AS location,
+      p.fee          AS fee,
+      DATE_FORMAT(p.created_at, '%Y-%m-%d') AS createdAt
+    FROM post p
+    LEFT JOIN users u ON u.id = p.member_id
+    WHERE p.board_type = #{boardType}
+    ORDER BY p.created_at DESC
+    LIMIT #{size} OFFSET #{offset}
+  </select>
+
+  <!-- 총 게시글 수 -->
+  <select id="countByBoard" resultType="int">
+    SELECT COUNT(*)
+    FROM post
+    WHERE board_type = #{boardType}
+  </select>
+
+  <!-- 게시글 등록 -->
+  <insert id="insertPost" parameterType="com.example.demo.vo.Post">
+    INSERT INTO post (board_type, category, title, body, member_id,
+                      start_date, end_date, location, fee, max_people, apply_url)
+    VALUES (#{boardType}, #{category}, #{title}, #{body}, #{memberId},
+            #{startDate}, #{endDate}, #{location}, #{fee}, #{maxPeople}, #{applyUrl})
+  </insert>
+
+  <!-- 게시글 수정 -->
+  <update id="updateById" parameterType="com.example.demo.vo.Post">
+    UPDATE post
+    SET
+      title      = #{title},
+      body       = #{body},
+      category   = #{category},
+      start_date = #{startDate},
+      end_date   = #{endDate},
+      location   = #{location},
+      fee        = #{fee},
+      max_people = #{maxPeople},
+      apply_url  = #{applyUrl}
+    WHERE id = #{id}
+  </update>
+
+  <!-- 게시글 삭제 -->
+  <delete id="deleteById">
+    DELETE FROM post WHERE id = #{id}
+  </delete>
+
+  <!-- 직전 INSERT의 auto-increment PK -->
+  <select id="getLastInsertId" resultType="long">
+    SELECT LAST_INSERT_ID()
+  </select>
+
+</mapper>

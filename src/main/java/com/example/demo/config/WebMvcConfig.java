@@ -30,7 +30,13 @@ public class WebMvcConfig implements WebMvcConfigurer {
 				"/usr/member/login",
 				"/usr/member/doLogin",
 				"/usr/member/join",
-				"/usr/member/doJoin"
+				"/usr/member/doJoin",
+				// 게시판 목록/상세/파일 다운로드는 비로그인 접근 허용
+				"/usr/program/list",
+				"/usr/program/detail",
+				"/usr/free/list",
+				"/usr/free/detail",
+				"/usr/file/download"
 			);
 
 		registry.addInterceptor(needLogoutInterceptor)

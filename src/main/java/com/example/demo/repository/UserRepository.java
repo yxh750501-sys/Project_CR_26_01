@@ -23,11 +23,14 @@ public interface UserRepository {
      * loginPw는 호출 전에 BCrypt 해싱된 값이어야 한다.
      */
     int createUser(
-            @Param("loginId") String loginId,
-            @Param("loginPw") String loginPw,
-            @Param("name")    String name,
-            @Param("email")   String email,
-            @Param("role")    String role
+            @Param("loginId")     String loginId,
+            @Param("loginPw")     String loginPw,
+            @Param("name")        String name,
+            @Param("email")       String email,
+            @Param("role")        String role,
+            @Param("memberType")  String memberType,
+            @Param("displayRole") String displayRole,
+            @Param("orgName")     String orgName
     );
 
     long getLastInsertId();

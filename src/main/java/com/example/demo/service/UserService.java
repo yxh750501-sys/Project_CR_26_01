@@ -66,6 +66,8 @@ public class UserService {
     public long join(JoinForm form) {
         String normalizedRole = (form.getRole() == null || form.getRole().isBlank())
                 ? "GUARDIAN" : form.getRole();
+        String normalizedMemberType = (form.getMemberType() == null || form.getMemberType().isBlank())
+                ? "GUARDIAN" : form.getMemberType();
         String hashedPw = passwordEncoder.encode(form.getLoginPw());
 
         userRepository.createUser(
@@ -73,7 +75,10 @@ public class UserService {
                 hashedPw,
                 form.getName(),
                 form.getEmail(),
-                normalizedRole
+                normalizedRole,
+                normalizedMemberType,
+                form.getDisplayRole(),
+                form.getOrgName()
         );
         return userRepository.getLastInsertId();
     }

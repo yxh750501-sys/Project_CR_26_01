@@ -56,7 +56,6 @@ class UserServiceTest {
     void existsByLoginId_blankInput_returnsFalseWithoutDbCall() {
         assertThat(userService.existsByLoginId(null)).isFalse();
         assertThat(userService.existsByLoginId("  ")).isFalse();
-        // userRepository 는 한 번도 호출되지 않아야 한다
         verify(userRepository, org.mockito.Mockito.never()).existsByLoginId(org.mockito.ArgumentMatchers.any());
     }
 
@@ -93,10 +92,11 @@ class UserServiceTest {
         long newId = userService.join(form);
 
         assertThat(newId).isEqualTo(1L);
-        // BCrypt 인코더가 정확히 1번 호출되어야 한다
         verify(passwordEncoder).encode("password123");
-        // 해시된 값이 저장되어야 한다 (평문 아님)
-        verify(userRepository).createUser("user1", "$2a$HASHED", "홍길동", "user1@test.com", "GUARDIAN");
+        // memberType 미설정 시 GUARDIAN 기본값, displayRole/orgName null 전달
+        verify(userRepository).createUser(
+                "user1", "$2a$HASHED", "홍길동", "user1@test.com",
+                "GUARDIAN", "GUARDIAN", null, null);
     }
 
     @Test
@@ -109,7 +109,9 @@ class UserServiceTest {
 
         userService.join(form);
 
-        verify(userRepository).createUser("user2", "$2a$HASHED2", "김영희", "user2@test.com", "GUARDIAN");
+        verify(userRepository).createUser(
+                "user2", "$2a$HASHED2", "김영희", "user2@test.com",
+                "GUARDIAN", "GUARDIAN", null, null);
     }
 
     @Test
@@ -122,7 +124,27 @@ class UserServiceTest {
 
         userService.join(form);
 
-        verify(userRepository).createUser("therapist1", "$2a$HASHED3", "이치료", "t@test.com", "THERAPIST");
+        verify(userRepository).createUser(
+                "therapist1", "$2a$HASHED3", "이치료", "t@test.com",
+                "THERAPIST", "GUARDIAN", null, null);
+    }
+
+    @Test
+    @DisplayName("join: memberType=GENERAL, displayRole/orgName 설정 시 그대로 저장한다")
+    void join_withMemberTypeGeneral_savesDisplayRoleAndOrgName() {
+        JoinForm form = makeJoinForm("center1", "pass12345", "박센터", "center@test.com", null);
+        form.setMemberType("GENERAL");
+        form.setDisplayRole("센터");
+        form.setOrgName("행복발달센터");
+
+        when(passwordEncoder.encode("pass12345")).thenReturn("$2a$HASHED4");
+        when(userRepository.getLastInsertId()).thenReturn(4L);
+
+        userService.join(form);
+
+        verify(userRepository).createUser(
+                "center1", "$2a$HASHED4", "박센터", "center@test.com",
+                "GUARDIAN", "GENERAL", "센터", "행복발달센터");
     }
 
     // ─────────────────────────────────────────────────

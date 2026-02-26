@@ -8,13 +8,16 @@
   <!-- ID로 사용자 조회 -->
   <select id="getUserById" resultType="com.example.demo.vo.User">
     SELECT
-      id          AS id,
-      login_id    AS loginId,
-      login_pw    AS loginPw,
-      name        AS name,
-      email       AS email,
-      `ROLE`      AS role,
-      reg_date    AS regDate
+      id           AS id,
+      login_id     AS loginId,
+      login_pw     AS loginPw,
+      name         AS name,
+      email        AS email,
+      `ROLE`       AS role,
+      member_type  AS memberType,
+      display_role AS displayRole,
+      org_name     AS orgName,
+      reg_date     AS regDate
     FROM users
     WHERE id = #{id}
   </select>
@@ -22,13 +25,16 @@
   <!-- loginId로 사용자 조회 -->
   <select id="getUserByLoginId" resultType="com.example.demo.vo.User">
     SELECT
-      id          AS id,
-      login_id    AS loginId,
-      login_pw    AS loginPw,
-      name        AS name,
-      email       AS email,
-      `ROLE`      AS role,
-      reg_date    AS regDate
+      id           AS id,
+      login_id     AS loginId,
+      login_pw     AS loginPw,
+      name         AS name,
+      email        AS email,
+      `ROLE`       AS role,
+      member_type  AS memberType,
+      display_role AS displayRole,
+      org_name     AS orgName,
+      reg_date     AS regDate
     FROM users
     WHERE login_id = #{loginId}
   </select>
@@ -49,8 +55,8 @@
 
   <!-- 신규 사용자 등록 (loginPw 는 BCrypt 해시값) -->
   <insert id="createUser">
-    INSERT INTO users (login_id, login_pw, name, email, `ROLE`, reg_date)
-    VALUES (#{loginId}, #{loginPw}, #{name}, #{email}, #{role}, NOW())
+    INSERT INTO users (login_id, login_pw, name, email, `ROLE`, member_type, display_role, org_name, reg_date)
+    VALUES (#{loginId}, #{loginPw}, #{name}, #{email}, #{role}, #{memberType}, #{displayRole}, #{orgName}, NOW())
   </insert>
 
   <!-- 직전 INSERT의 auto-increment PK -->

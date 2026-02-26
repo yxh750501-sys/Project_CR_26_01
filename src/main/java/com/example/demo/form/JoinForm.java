@@ -34,6 +34,16 @@ public class JoinForm {
     /** 역할(GUARDIAN / THERAPIST). 미입력 시 서비스에서 GUARDIAN 기본 적용 */
     private String role;
 
+    /** 회원 유형: GUARDIAN(보호자) / GENERAL(일반회원). 미입력 시 GUARDIAN 기본 적용 */
+    private String memberType;
+
+    /** 표시 역할: 치료사 / 센터 / 기관 / 기타 (GENERAL 선택 시만 의미 있음, 선택) */
+    private String displayRole;
+
+    /** 소속 기관명 (선택) */
+    @Size(max = 100, message = "기관명은 100자 이내로 입력해 주세요.")
+    private String orgName;
+
     // ── getters / setters ──────────────────────────────────────
 
     public String getLoginId() { return loginId; }
@@ -53,4 +63,13 @@ public class JoinForm {
 
     public String getRole() { return role; }
     public void setRole(String role) { this.role = role; }
+
+    public String getMemberType() { return memberType; }
+    public void setMemberType(String memberType) { this.memberType = memberType; }
+
+    public String getDisplayRole() { return displayRole; }
+    public void setDisplayRole(String displayRole) { this.displayRole = displayRole; }
+
+    public String getOrgName() { return orgName; }
+    public void setOrgName(String orgName) { this.orgName = orgName; }
 }

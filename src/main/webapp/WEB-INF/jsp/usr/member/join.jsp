@@ -10,7 +10,7 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; }
     body    { font-family: Arial, sans-serif; margin: 0; background: #f5f5f5; }
-    .wrap   { max-width: 480px; margin: 60px auto; background: #fff;
+    .wrap   { max-width: 520px; margin: 60px auto; background: #fff;
               border: 1px solid #ddd; border-radius: 10px; padding: 36px 40px; }
     h2      { margin: 0 0 24px; font-size: 22px; }
     .field  { margin-bottom: 18px; }
@@ -34,6 +34,12 @@
     .notice { margin-bottom: 18px; padding: 10px 14px;
               background: #fff8e1; border: 1px solid #ffe082;
               border-radius: 6px; font-size: 13px; color: #7a5c00; }
+    .type-tabs { display: flex; gap: 8px; margin-bottom: 4px; }
+    .type-tab  { flex: 1; padding: 9px; border: 2px solid #ccc; border-radius: 6px;
+                 background: #fff; font-size: 14px; cursor: pointer; text-align: center;
+                 transition: all .15s; }
+    .type-tab.active { border-color: #4a90d9; background: #eaf3fb; color: #2a70b9; font-weight: bold; }
+    .general-fields { display: none; }
   </style>
 </head>
 <body>
@@ -41,20 +47,12 @@
 <div class="wrap">
   <h2>회원가입</h2>
 
-  <%-- 가입 성공 후 로그인 페이지에서 ?joined=1 파라미터로 이미 처리되므로 여기선 불필요.
-       별도 메시지가 전달된 경우만 출력 (예: 외부 redirect 시) --%>
   <c:if test="${not empty param.error}">
     <div class="notice">${param.error}</div>
   </c:if>
 
-  <%-- Spring form taglib: modelAttribute="joinForm" 이 모델에 있어야 렌더링 가능 --%>
   <form:form method="post" action="/usr/member/doJoin" modelAttribute="joinForm">
 
-    <%--
-      전역 오류(object-level) 표시:
-      - loginId/email 판별 불가 DB 중복(레이스 컨디션) 시 bindingResult.reject()가 여기에 출력됨
-      - path="" 는 글로벌 에러만 출력 (필드 에러 중복 없음)
-    --%>
     <form:errors path="" cssClass="notice" element="div" delimiter="<br/>" />
 
     <%-- 아이디 --%>
@@ -99,14 +97,43 @@
       <form:errors path="loginPwConfirm" cssClass="err" element="span" />
     </div>
 
-    <%-- 역할 (선택) --%>
+    <%-- 회원 유형 --%>
     <div class="field">
-      <label for="role">역할</label>
-      <form:select path="role" id="role">
-        <form:option value="GUARDIAN">보호자 (GUARDIAN)</form:option>
-        <form:option value="THERAPIST">치료사 (THERAPIST)</form:option>
-      </form:select>
+      <label>회원 유형 <span style="color:#e74c3c;">*</span></label>
+      <div class="type-tabs">
+        <div class="type-tab active" id="tab-guardian" onclick="selectMemberType('GUARDIAN')">
+          보호자<br/><small style="font-weight:normal;color:#666;">아동 보호자·가족</small>
+        </div>
+        <div class="type-tab" id="tab-general" onclick="selectMemberType('GENERAL')">
+          일반회원<br/><small style="font-weight:normal;color:#666;">치료사·센터·기관 등</small>
+        </div>
+      </div>
+      <form:hidden path="memberType" id="memberType" />
     </div>
+
+    <%-- 일반회원 추가 정보 (GENERAL 선택 시 노출) --%>
+    <div class="general-fields" id="generalFields">
+      <div class="field">
+        <label for="displayRole">역할 구분</label>
+        <form:select path="displayRole" id="displayRole">
+          <form:option value="">-- 선택 (선택 사항) --</form:option>
+          <form:option value="치료사">치료사</form:option>
+          <form:option value="센터">센터</form:option>
+          <form:option value="기관">기관</form:option>
+          <form:option value="기타">기타</form:option>
+        </form:select>
+        <form:errors path="displayRole" cssClass="err" element="span" />
+      </div>
+      <div class="field">
+        <label for="orgName">소속 기관명</label>
+        <form:input path="orgName" id="orgName" type="text"
+                    placeholder="기관명 (선택 사항)" cssErrorClass="error-field" />
+        <form:errors path="orgName" cssClass="err" element="span" />
+      </div>
+    </div>
+
+    <%-- 역할 (기존 호환 — hidden) --%>
+    <form:hidden path="role" />
 
     <button type="submit" class="btn">가입하기</button>
 
@@ -116,6 +143,35 @@
     이미 계정이 있으신가요? <a href="/usr/member/login">로그인</a>
   </div>
 </div>
+
+<script>
+  // 페이지 로드 시 초기화
+  (function() {
+    var mt = document.getElementById('memberType').value;
+    if (mt === 'GENERAL') {
+      selectMemberType('GENERAL');
+    } else {
+      selectMemberType('GUARDIAN');
+    }
+  })();
+
+  function selectMemberType(type) {
+    document.getElementById('memberType').value = type;
+    var gTab = document.getElementById('tab-guardian');
+    var genTab = document.getElementById('tab-general');
+    var genFields = document.getElementById('generalFields');
+
+    if (type === 'GENERAL') {
+      gTab.classList.remove('active');
+      genTab.classList.add('active');
+      genFields.style.display = 'block';
+    } else {
+      gTab.classList.add('active');
+      genTab.classList.remove('active');
+      genFields.style.display = 'none';
+    }
+  }
+</script>
 
 </body>
 </html>

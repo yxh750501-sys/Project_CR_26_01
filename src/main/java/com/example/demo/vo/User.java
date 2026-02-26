@@ -8,6 +8,12 @@ public class User {
     private String name;
     private String email;
     private String role;
+    /** 회원 유형: GUARDIAN(보호자) / GENERAL(일반회원) */
+    private String memberType;
+    /** 표시 역할: 치료사 / 센터 / 기관 / 기타 (선택) */
+    private String displayRole;
+    /** 소속 기관명 (선택) */
+    private String orgName;
     private String regDate;
 
     public long getId() { return id; }
@@ -27,6 +33,15 @@ public class User {
 
     public String getRole() { return role; }
     public void setRole(String role) { this.role = role; }
+
+    public String getMemberType() { return memberType; }
+    public void setMemberType(String memberType) { this.memberType = memberType; }
+
+    public String getDisplayRole() { return displayRole; }
+    public void setDisplayRole(String displayRole) { this.displayRole = displayRole; }
+
+    public String getOrgName() { return orgName; }
+    public void setOrgName(String orgName) { this.orgName = orgName; }
 
     public String getRegDate() { return regDate; }
     public void setRegDate(String regDate) { this.regDate = regDate; }

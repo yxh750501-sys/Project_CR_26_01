@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.demo.repository.PostFileRepository">
+
+  <!-- 첨부파일 등록 -->
+  <insert id="insertFile" parameterType="com.example.demo.vo.PostFile">
+    INSERT INTO post_file (post_id, orig_name, stored_name, file_size)
+    VALUES (#{postId}, #{origName}, #{storedName}, #{fileSize})
+  </insert>
+
+  <!-- 게시글의 첨부파일 목록 -->
+  <select id="findByPostId" resultType="com.example.demo.vo.PostFile">
+    SELECT
+      id          AS id,
+      post_id     AS postId,
+      orig_name   AS origName,
+      stored_name AS storedName,
+      file_size   AS fileSize,
+      DATE_FORMAT(created_at, '%Y-%m-%d %H:%i') AS createdAt
+    FROM post_file
+    WHERE post_id = #{postId}
+    ORDER BY id ASC
+  </select>
+
+  <!-- 단건 첨부파일 조회 (다운로드용) -->
+  <select id="findById" resultType="com.example.demo.vo.PostFile">
+    SELECT
+      id          AS id,
+      post_id     AS postId,
+      orig_name   AS origName,
+      stored_name AS storedName,
+      file_size   AS fileSize,
+      DATE_FORMAT(created_at, '%Y-%m-%d %H:%i') AS createdAt
+    FROM post_file
+    WHERE id = #{id}
+  </select>
+
+  <!-- 게시글 첨부파일 전체 삭제 -->
+  <delete id="deleteByPostId">
+    DELETE FROM post_file WHERE post_id = #{postId}
+  </delete>
+
+  <!-- 첨부파일 단건 삭제 -->
+  <delete id="deleteById">
+    DELETE FROM post_file WHERE id = #{id}
+  </delete>
+
+</mapper>

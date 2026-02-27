@@ -18,6 +18,10 @@ public interface PostRepository {
                                @Param("offset")    int offset,
                                @Param("size")      int size);
 
+    /** 게시판 최신 N건 조회 (홈 화면용) */
+    List<Post> findLatestByBoard(@Param("boardType") String boardType,
+                                 @Param("limit")     int limit);
+
     /** 게시판 총 게시글 수 */
     int countByBoard(@Param("boardType") String boardType);
 

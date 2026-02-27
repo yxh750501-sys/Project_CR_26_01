@@ -49,6 +49,23 @@
     LIMIT #{size} OFFSET #{offset}
   </select>
 
+  <!-- 최신 N건 (홈 화면용) -->
+  <select id="findLatestByBoard" resultType="com.example.demo.vo.Post">
+    SELECT
+      p.id           AS id,
+      p.board_type   AS boardType,
+      p.category     AS category,
+      p.title        AS title,
+      p.member_id    AS memberId,
+      u.name         AS authorName,
+      DATE_FORMAT(p.created_at, '%Y-%m-%d') AS createdAt
+    FROM post p
+    LEFT JOIN users u ON u.id = p.member_id
+    WHERE p.board_type = #{boardType}
+    ORDER BY p.created_at DESC
+    LIMIT #{limit}
+  </select>
+
   <!-- 총 게시글 수 -->
   <select id="countByBoard" resultType="int">
     SELECT COUNT(*)

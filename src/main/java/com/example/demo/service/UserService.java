@@ -3,6 +3,7 @@ package com.example.demo.service;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.example.demo.form.JoinForm;
 import com.example.demo.repository.UserRepository;
@@ -19,11 +20,14 @@ public class UserService {
 
     private final UserRepository        userRepository;
     private final BCryptPasswordEncoder passwordEncoder;
+    private final FileStorageService    fileStorageService;
 
     public UserService(UserRepository userRepository,
-                       BCryptPasswordEncoder passwordEncoder) {
-        this.userRepository  = userRepository;
-        this.passwordEncoder = passwordEncoder;
+                       BCryptPasswordEncoder passwordEncoder,
+                       FileStorageService fileStorageService) {
+        this.userRepository     = userRepository;
+        this.passwordEncoder    = passwordEncoder;
+        this.fileStorageService = fileStorageService;
     }
 
     // ── 조회 ────────────────────────────────────────────────────
@@ -69,12 +73,14 @@ public class UserService {
         String normalizedMemberType = (form.getMemberType() == null || form.getMemberType().isBlank())
                 ? "GUARDIAN" : form.getMemberType();
         String hashedPw = passwordEncoder.encode(form.getLoginPw());
+        String phone    = (form.getPhone() == null || form.getPhone().isBlank()) ? null : form.getPhone().trim();
 
         userRepository.createUser(
                 form.getLoginId(),
                 hashedPw,
                 form.getName(),
                 form.getEmail(),
+                phone,
                 normalizedRole,
                 normalizedMemberType,
                 form.getDisplayRole(),
@@ -102,6 +108,53 @@ public class UserService {
         if (savedHash == null || !passwordEncoder.matches(loginPw, savedHash)) return null;
 
         return user;
+    }
+
+    // ── 프로필 수정 ──────────────────────────────────────────────
+
+    /**
+     * 이름·전화번호 수정.
+     *
+     * @param userId 로그인 사용자 PK
+     * @param name   변경할 이름
+     * @param phone  변경할 전화번호 (null 또는 빈 문자열 가능)
+     */
+    @Transactional
+    public void updateProfile(long userId, String name, String phone) {
+        String normalizedPhone = (phone == null || phone.isBlank()) ? null : phone.trim();
+        userRepository.updateProfile(userId, name, normalizedPhone);
+    }
+
+    /**
+     * 비밀번호 변경.
+     *
+     * @param userId    로그인 사용자 PK
+     * @param currentPw 현재 비밀번호 (원문)
+     * @param newPw     새 비밀번호 (원문, 컨트롤러에서 길이 검증 후 전달)
+     * @return 현재 비밀번호 일치 시 true, 불일치 시 false
+     */
+    @Transactional
+    public boolean changePassword(long userId, String currentPw, String newPw) {
+        User user = userRepository.getUserById(userId);
+        if (user == null) return false;
+        if (!passwordEncoder.matches(currentPw, user.getLoginPw())) return false;
+
+        userRepository.updatePassword(userId, passwordEncoder.encode(newPw));
+        return true;
+    }
+
+    /**
+     * 프로필 이미지 업로드.
+     *
+     * @param userId 로그인 사용자 PK
+     * @param file   업로드 이미지 파일 (jpg, jpeg, png, gif)
+     * @return 저장된 파일명
+     */
+    @Transactional
+    public String updateProfileImage(long userId, MultipartFile file) {
+        String storedName = fileStorageService.storeProfileImage(file);
+        userRepository.updateProfileImage(userId, storedName);
+        return storedName;
     }
 
     // ── 세션 헬퍼 ────────────────────────────────────────────────

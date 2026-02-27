@@ -56,7 +56,8 @@ public class UsrMemberController {
         session.setAttribute(SessionConst.LOGINED_USER_ID,   user.getId());
         session.setAttribute(SessionConst.LOGINED_USER_ROLE, user.getRole());
 
-        return "redirect:/usr/member/me";
+        // 로그인 성공 후 홈으로 이동
+        return "redirect:/";
     }
 
     // ── 회원가입 ─────────────────────────────────────────────────
@@ -76,7 +77,7 @@ public class UsrMemberController {
      *
      * <p>처리 순서:
      * <ol>
-     *   <li>{@code @Valid} 어노테이션 검증 (NotBlank, Size, Email)
+     *   <li>{@code @Valid} 어노테이션 검증 (NotBlank, Size, Email, Pattern)
      *   <li>비밀번호 확인 일치 검사
      *   <li>loginId / email 중복 검사 (SELECT 기반 사전 검사)
      *   <li>검증 오류가 있으면 회원가입 폼으로 돌아감 (입력값 유지)
@@ -133,25 +134,12 @@ public class UsrMemberController {
         return "redirect:/usr/member/login?joined=1";
     }
 
-    // ── 마이페이지 ───────────────────────────────────────────────
-
-    @GetMapping("/me")
-    public String showMe(HttpServletRequest req, HttpSession session) {
-        Object v = session.getAttribute(SessionConst.LOGINED_USER_ID);
-        if (v == null) return "redirect:/usr/member/login";
-
-        long userId = (v instanceof Number) ? ((Number) v).longValue()
-                                            : Long.parseLong(String.valueOf(v));
-        req.setAttribute("loginedUserId", userId);
-        return "usr/member/me";
-    }
-
     // ── 로그아웃 ─────────────────────────────────────────────────
 
     @PostMapping("/doLogout")
     public String doLogout(HttpSession session) {
         session.invalidate();
-        return "redirect:/usr/member/login";
+        return "redirect:/";
     }
 
     // ── 내부 헬퍼 ────────────────────────────────────────────────

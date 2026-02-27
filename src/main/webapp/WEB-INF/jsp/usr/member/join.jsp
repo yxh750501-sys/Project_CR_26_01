@@ -18,6 +18,7 @@
               margin-bottom: 5px; color: #333; }
     input[type="text"],
     input[type="email"],
+    input[type="tel"],
     input[type="password"],
     select  { width: 100%; padding: 9px 12px; border: 1px solid #ccc;
               border-radius: 6px; font-size: 14px; }
@@ -78,6 +79,15 @@
       <form:input path="email" id="email" type="email"
                   placeholder="example@email.com" cssErrorClass="error-field" />
       <form:errors path="email" cssClass="err" element="span" />
+    </div>
+
+    <%-- 전화번호 (선택) --%>
+    <div class="field">
+      <label for="phone">전화번호</label>
+      <form:input path="phone" id="phone" type="tel"
+                  placeholder="010-1234-5678 (선택)" cssErrorClass="error-field" />
+      <form:errors path="phone" cssClass="err" element="span" />
+      <span class="hint">선택 입력 — 010-xxxx-xxxx 형식 권장</span>
     </div>
 
     <%-- 비밀번호 --%>

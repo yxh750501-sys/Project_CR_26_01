@@ -36,6 +36,9 @@ public class FileStorageService {
             "hwp",
             "zip"
     );
+
+    private static final Set<String> IMAGE_EXT = Set.of("jpg", "jpeg", "png", "gif");
+
     private static final long MAX_FILE_SIZE = 10L * 1024 * 1024; // 10MB
 
     @Value("${app.upload.dir}")
@@ -81,6 +84,42 @@ public class FileStorageService {
         pf.setStoredName(storedName);
         pf.setFileSize(file.getSize());
         return pf;
+    }
+
+    /**
+     * 프로필 이미지를 업로드 디렉토리의 {@code profile} 하위 폴더에 저장하고
+     * 저장된 파일명(UUID.ext)을 반환한다.
+     *
+     * @param file 업로드된 이미지 파일 (jpg, jpeg, png, gif만 허용)
+     * @return 저장된 파일명 (예: "a1b2c3d4-....jpg")
+     */
+    public String storeProfileImage(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("빈 파일은 저장할 수 없습니다.");
+        }
+
+        String origName = sanitizeFilename(file.getOriginalFilename());
+        String ext      = extractExtension(origName);
+
+        if (!IMAGE_EXT.contains(ext.toLowerCase())) {
+            throw new IllegalArgumentException("프로필 이미지는 jpg, jpeg, png, gif 형식만 허용됩니다.");
+        }
+        if (file.getSize() > MAX_FILE_SIZE) {
+            throw new IllegalArgumentException("파일 크기는 10MB 이하여야 합니다.");
+        }
+
+        String storedName = UUID.randomUUID() + "." + ext.toLowerCase();
+        Path   dir        = Paths.get(uploadDir, "profile");
+        Path   dest       = dir.resolve(storedName);
+
+        try {
+            Files.createDirectories(dir);
+            file.transferTo(dest.toFile());
+        } catch (IOException e) {
+            throw new RuntimeException("프로필 이미지 저장 실패", e);
+        }
+
+        return storedName;
     }
 
     /**

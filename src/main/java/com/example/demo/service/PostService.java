@@ -1,6 +1,7 @@
 package com.example.demo.service;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -62,6 +63,14 @@ public class PostService {
         result.put("total",      total);
         result.put("totalPages", totalPages);
         return result;
+    }
+
+    /**
+     * 게시판 최신 N건 조회 (홈 화면용).
+     */
+    public List<Post> getLatestPosts(String boardType, int limit) {
+        List<Post> posts = postRepository.findLatestByBoard(boardType, limit);
+        return posts == null ? Collections.emptyList() : posts;
     }
 
     // ── 상세 ────────────────────────────────────────────────────

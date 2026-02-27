@@ -27,11 +27,25 @@ public interface UserRepository {
             @Param("loginPw")     String loginPw,
             @Param("name")        String name,
             @Param("email")       String email,
+            @Param("phone")       String phone,
             @Param("role")        String role,
             @Param("memberType")  String memberType,
             @Param("displayRole") String displayRole,
             @Param("orgName")     String orgName
     );
+
+    /** 프로필(이름, 전화번호) 수정 */
+    int updateProfile(@Param("id")    long   id,
+                      @Param("name")  String name,
+                      @Param("phone") String phone);
+
+    /** 비밀번호 변경 (loginPw 는 BCrypt 해시값) */
+    int updatePassword(@Param("id")      long   id,
+                       @Param("loginPw") String loginPw);
+
+    /** 프로필 이미지 파일명 저장 */
+    int updateProfileImage(@Param("id")           long   id,
+                           @Param("profileImage") String profileImage);
 
     long getLastInsertId();
 }

@@ -2,6 +2,7 @@ package com.example.demo.form;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 /**
@@ -23,6 +24,11 @@ public class JoinForm {
     @NotBlank(message = "이메일을 입력해 주세요.")
     @Email(message = "올바른 이메일 형식이 아닙니다.")
     private String email;
+
+    /** 전화번호 (선택). 빈 문자열이거나 010-1234-5678 형식 허용 */
+    @Pattern(regexp = "^$|^\\d{2,3}-?\\d{3,4}-?\\d{4}$",
+             message = "올바른 전화번호 형식이 아닙니다. (예: 010-1234-5678)")
+    private String phone;
 
     @NotBlank(message = "비밀번호를 입력해 주세요.")
     @Size(min = 8, max = 64, message = "비밀번호는 8~64자로 입력해 주세요.")
@@ -54,6 +60,9 @@ public class JoinForm {
 
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
+
+    public String getPhone() { return phone; }
+    public void setPhone(String phone) { this.phone = phone; }
 
     public String getLoginPw() { return loginPw; }
     public void setLoginPw(String loginPw) { this.loginPw = loginPw; }

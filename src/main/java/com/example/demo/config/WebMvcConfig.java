@@ -36,6 +36,9 @@ public class WebMvcConfig implements WebMvcConfigurer {
 				"/usr/program/detail",
 				"/usr/free/list",
 				"/usr/free/detail",
+				// /usr/post/** 는 자유게시판 별칭 — 목록/상세 비로그인 허용
+				"/usr/post/list",
+				"/usr/post/detail",
 				"/usr/file/download"
 			);
 

@@ -131,6 +131,88 @@ class ChecklistStartServiceTest {
     }
 
     // ─────────────────────────────────────────────────
+    // findLatestDraftRunId
+    // ─────────────────────────────────────────────────
+
+    @Test
+    @DisplayName("findLatestDraftRunId: DRAFT가 있으면 해당 ID 반환")
+    void findLatestDraftRunId_whenExists_returnsId() {
+        when(repo.getLatestDraftRunId(1L, 2L, 3L)).thenReturn(55L);
+
+        Long result = service.findLatestDraftRunId(1L, 2L, 3L);
+
+        assertThat(result).isEqualTo(55L);
+    }
+
+    @Test
+    @DisplayName("findLatestDraftRunId: DRAFT 없으면 null 반환")
+    void findLatestDraftRunId_whenNone_returnsNull() {
+        when(repo.getLatestDraftRunId(1L, 2L, 3L)).thenReturn(null);
+
+        Long result = service.findLatestDraftRunId(1L, 2L, 3L);
+
+        assertThat(result).isNull();
+    }
+
+    // ─────────────────────────────────────────────────
+    // discardAllDraftsAndCreateNew
+    // ─────────────────────────────────────────────────
+
+    @Test
+    @DisplayName("discardAllDraftsAndCreateNew: answers 삭제 → DISCARDED → 새 run 생성 순서로 호출하고 새 ID 반환")
+    void discardAllDraftsAndCreateNew_success() {
+        when(repo.deleteAnswersByDraftRuns(1L, 2L, 3L)).thenReturn(5);
+        when(repo.discardDraftRuns(1L, 2L, 3L)).thenReturn(1);
+        when(repo.createRun(3L, 2L, 1L)).thenReturn(1);
+        when(repo.getLatestDraftRunId(1L, 2L, 3L)).thenReturn(200L);
+
+        long result = service.discardAllDraftsAndCreateNew(1L, 2L, 3L);
+
+        assertThat(result).isEqualTo(200L);
+        verify(repo).deleteAnswersByDraftRuns(1L, 2L, 3L);
+        verify(repo).discardDraftRuns(1L, 2L, 3L);
+        verify(repo).createRun(3L, 2L, 1L);
+    }
+
+    @Test
+    @DisplayName("discardAllDraftsAndCreateNew: 새 run ID 조회 실패 시 예외")
+    void discardAllDraftsAndCreateNew_createFailure_throwsIllegalState() {
+        when(repo.getLatestDraftRunId(anyLong(), anyLong(), anyLong())).thenReturn(null);
+        when(repo.getLastInsertId()).thenReturn(0L);
+
+        assertThatThrownBy(() -> service.discardAllDraftsAndCreateNew(1L, 2L, 3L))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("새 DRAFT run 생성에 실패");
+    }
+
+    // ─────────────────────────────────────────────────
+    // createNewDraftRun
+    // ─────────────────────────────────────────────────
+
+    @Test
+    @DisplayName("createNewDraftRun: createRun 후 새 ID 반환")
+    void createNewDraftRun_success() {
+        when(repo.createRun(3L, 2L, 1L)).thenReturn(1);
+        when(repo.getLatestDraftRunId(1L, 2L, 3L)).thenReturn(77L);
+
+        long result = service.createNewDraftRun(1L, 2L, 3L);
+
+        assertThat(result).isEqualTo(77L);
+        verify(repo).createRun(3L, 2L, 1L);
+    }
+
+    @Test
+    @DisplayName("createNewDraftRun: ID 조회 실패 시 예외")
+    void createNewDraftRun_failure_throwsIllegalState() {
+        when(repo.getLatestDraftRunId(anyLong(), anyLong(), anyLong())).thenReturn(null);
+        when(repo.getLastInsertId()).thenReturn(0L);
+
+        assertThatThrownBy(() -> service.createNewDraftRun(1L, 2L, 3L))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("DRAFT run 생성에 실패");
+    }
+
+    // ─────────────────────────────────────────────────
     // resolveChildId
     // ─────────────────────────────────────────────────
 

@@ -59,7 +59,45 @@ public class ChecklistStartService {
 		return checklistStartRepository.getFirstChildIdByUserId(userId);
 	}
 
-	// ──────────────────── Run 생성/조회 ────────────────────
+	// ──────────────────── Run 조회 (생성 없음) ────────────────────
+
+	/**
+	 * (userId, childId, checklistId) 기준 가장 최신 DRAFT run ID를 반환한다.
+	 * run을 생성하지 않는다. DRAFT가 없으면 null을 반환한다.
+	 */
+	public Long findLatestDraftRunId(long userId, long childId, long checklistId) {
+		return checklistStartRepository.getLatestDraftRunId(userId, childId, checklistId);
+	}
+
+	/**
+	 * DRAFT run 기본 정보를 반환한다 (임시저장 선택 화면 표시용).
+	 * lastSavedAt, childName 등이 포함된다.
+	 */
+	public Map<String, Object> getDraftRunBasicInfo(long runId) {
+		return checklistStartRepository.getRunBasicInfo(runId);
+	}
+
+	// ──────────────────── Run 생성 ────────────────────
+
+	/**
+	 * 무조건 새 DRAFT run을 생성하고 ID를 반환한다.
+	 * 기존 DRAFT 존재 여부와 관계없이 항상 신규 생성한다.
+	 * (사용처: DRAFT가 없음을 이미 확인한 후 호출)
+	 */
+	@Transactional
+	public long createNewDraftRun(long userId, long childId, long checklistId) {
+		checklistStartRepository.createRun(checklistId, childId, userId);
+
+		Long created = checklistStartRepository.getLatestDraftRunId(userId, childId, checklistId);
+		if (created == null || created <= 0) {
+			created = checklistStartRepository.getLastInsertId();
+		}
+		if (created == null || created <= 0) {
+			throw new IllegalStateException(
+					"DRAFT run 생성에 실패했습니다. (userId=" + userId + ", childId=" + childId + ")");
+		}
+		return created;
+	}
 
 	/**
 	 * 같은 (userId, childId, checklistId) 조합의 DRAFT run이 있으면 재사용,
@@ -81,16 +119,47 @@ public class ChecklistStartService {
 
 		checklistStartRepository.createRun(checklistId, childId, userId);
 
-		// LAST_INSERT_ID()는 같은 커넥션 안에서 안전하지만,
 		// 방어적으로 getLatestDraftRunId()로 재조회해 실제 저장된 ID를 사용한다.
 		Long created = checklistStartRepository.getLatestDraftRunId(userId, childId, checklistId);
 		if (created == null || created <= 0) {
-			// fallback: LAST_INSERT_ID() 사용
 			created = checklistStartRepository.getLastInsertId();
 		}
 		if (created == null || created <= 0) {
 			throw new IllegalStateException(
 					"DRAFT run 생성에 실패했습니다. (userId=" + userId + ", childId=" + childId + ")");
+		}
+		return created;
+	}
+
+	/**
+	 * (userId, childId, checklistId) 기준의 모든 DRAFT run을 폐기하고
+	 * 새 DRAFT run을 생성하여 그 ID를 반환한다.
+	 *
+	 * <p>처리 순서:
+	 * <ol>
+	 *   <li>해당 DRAFT run의 answers 전체 삭제 (FK 제약 위반 방지)</li>
+	 *   <li>DRAFT run들을 DISCARDED 상태로 변경</li>
+	 *   <li>새 DRAFT run 생성</li>
+	 * </ol>
+	 */
+	@Transactional
+	public long discardAllDraftsAndCreateNew(long userId, long childId, long checklistId) {
+		// 1) 기존 DRAFT run의 answers 삭제
+		checklistStartRepository.deleteAnswersByDraftRuns(userId, childId, checklistId);
+		// 2) 기존 DRAFT run → DISCARDED
+		checklistStartRepository.discardDraftRuns(userId, childId, checklistId);
+		// 3) 새 DRAFT run 생성
+		checklistStartRepository.createRun(checklistId, childId, userId);
+
+		// getLatestDraftRunId는 STATUS='DRAFT'만 조회하므로
+		// 방금 DISCARDED 처리 후 새로 만든 run의 ID만 반환된다.
+		Long created = checklistStartRepository.getLatestDraftRunId(userId, childId, checklistId);
+		if (created == null || created <= 0) {
+			created = checklistStartRepository.getLastInsertId();
+		}
+		if (created == null || created <= 0) {
+			throw new IllegalStateException(
+					"새 DRAFT run 생성에 실패했습니다. (userId=" + userId + ", childId=" + childId + ")");
 		}
 		return created;
 	}

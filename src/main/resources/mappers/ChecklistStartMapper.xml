@@ -50,6 +50,22 @@
     LIMIT 1
   </select>
 
+  <!-- DRAFT run 기본 정보 조회 (임시저장 선택 화면 표시용) -->
+  <select id="getRunBasicInfo" resultType="map">
+    SELECT
+      r.id                                              AS runId,
+      r.child_id                                        AS childId,
+      ch.name                                           AS childName,
+      cl.title                                          AS checklistTitle,
+      DATE_FORMAT(r.update_date, '%Y-%m-%d %H:%i')     AS lastSavedAt,
+      r.total_score                                     AS totalScore
+    FROM checklist_runs r
+    INNER JOIN children   ch ON ch.id = r.child_id
+    INNER JOIN checklists cl ON cl.id = r.checklist_id
+    WHERE r.id = #{runId}
+    LIMIT 1
+  </select>
+
   <!-- run이 속한 checklist_id (form 위변조 검증용) -->
   <select id="getChecklistIdByRunId" resultType="long">
     SELECT checklist_id
@@ -113,6 +129,35 @@
       update_date    = NOW()
     WHERE id       = #{runId}
       AND `STATUS` = 'DRAFT'
+  </update>
+
+  <!--
+    (userId, childId, checklistId) 기준 DRAFT 상태인 모든 run의 answers를 삭제한다.
+    discardDraftRuns() 전에 호출해 FK 제약 위반을 방지한다.
+  -->
+  <delete id="deleteAnswersByDraftRuns">
+    DELETE ca
+    FROM checklist_answers ca
+    INNER JOIN checklist_runs cr ON cr.id = ca.run_id
+    WHERE cr.user_id      = #{userId}
+      AND cr.child_id     = #{childId}
+      AND cr.checklist_id = #{checklistId}
+      AND cr.`STATUS`     = 'DRAFT'
+  </delete>
+
+  <!--
+    (userId, childId, checklistId) 기준 모든 DRAFT run을 DISCARDED로 변경한다.
+    이후 getLatestDraftRunId()는 해당 run들을 반환하지 않는다.
+  -->
+  <update id="discardDraftRuns">
+    UPDATE checklist_runs
+    SET
+      `STATUS`    = 'DISCARDED',
+      update_date = NOW()
+    WHERE user_id      = #{userId}
+      AND child_id     = #{childId}
+      AND checklist_id = #{checklistId}
+      AND `STATUS`     = 'DRAFT'
   </update>
 
   <!-- ──────────────────── 답변 UPSERT ──────────────────── -->

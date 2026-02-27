@@ -5,6 +5,7 @@ import java.util.Map;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -30,7 +31,9 @@ public class UsrChecklistStartController {
 	// ────────────────────────────────────────────────────────────
 	// GET /usr/checklist/start
 	// runIdParam 있음: 해당 run 이어하기 (SUBMITTED이면 결과 화면 안내)
-	// runIdParam 없음: DRAFT 재사용 or 새 DRAFT 생성
+	// runIdParam 없음:
+	//   - 기존 DRAFT 있으면 → 선택 화면(resumeOrNew)으로 리다이렉트
+	//   - 기존 DRAFT 없으면 → 새 DRAFT 생성 후 작성 화면
 	// ────────────────────────────────────────────────────────────
 	@RequestMapping("/usr/checklist/start")
 	public String start(
@@ -69,15 +72,15 @@ public class UsrChecklistStartController {
 			return "usr/common/js";
 		}
 
-		long runId;
+		long runId = 0L;
+
 		if (runIdParam != null && runIdParam > 0) {
-			// 소유권 확인
+			// ── 명시적 runId 지정: 이어서 작성 ──
 			if (!checklistStartService.isRunOwnedByUser(runIdParam, userId)) {
 				model.addAttribute("msg", "접근 권한이 없습니다.");
 				model.addAttribute("historyBack", true);
 				return "usr/common/js";
 			}
-			// SUBMITTED → 수정 불가, 결과 화면으로 안내
 			String status = checklistStartService.getRunStatus(runIdParam, userId);
 			if ("SUBMITTED".equalsIgnoreCase(status)) {
 				model.addAttribute("msg", "이미 제출된 체크리스트입니다. 결과 화면으로 이동합니다.");
@@ -85,9 +88,19 @@ public class UsrChecklistStartController {
 				return "usr/common/js";
 			}
 			runId = runIdParam;
+
 		} else {
-			// DRAFT 재사용 or 신규 생성
-			runId = checklistStartService.getOrCreateDraftRun(userId, childId, checklistId);
+			// ── runId 미지정: DRAFT 존재 여부 확인 ──
+			Long existingDraftId = checklistStartService.findLatestDraftRunId(userId, childId, checklistId);
+			if (existingDraftId != null && existingDraftId > 0) {
+				// 임시저장 내용이 있으면 선택 화면으로 이동
+				return "redirect:/usr/checklist/resumeOrNew"
+						+ "?draftRunId=" + existingDraftId
+						+ "&checklistId=" + checklistId
+						+ "&childId=" + childId;
+			}
+			// DRAFT 없음 → 새로 생성
+			runId = checklistStartService.createNewDraftRun(userId, childId, checklistId);
 		}
 
 		Map<String, AnswerForStart> answersMap = checklistStartService.getAnswersMap(runId);
@@ -103,6 +116,73 @@ public class UsrChecklistStartController {
 		}
 
 		return "usr/checklist/start";
+	}
+
+	// ────────────────────────────────────────────────────────────
+	// GET /usr/checklist/resumeOrNew
+	// 임시저장 내용이 있을 때 "불러오기 / 새로 시작" 선택 화면
+	// ────────────────────────────────────────────────────────────
+	@GetMapping("/usr/checklist/resumeOrNew")
+	public String resumeOrNew(
+			@RequestParam("draftRunId")  long draftRunId,
+			@RequestParam("checklistId") long checklistId,
+			@RequestParam("childId")     long childId,
+			HttpSession session, Model model) {
+
+		Long userId = toLong(session.getAttribute("loginedUserId"));
+		if (userId == null || userId <= 0) {
+			return "redirect:/usr/member/login";
+		}
+
+		// 소유권 확인
+		if (!checklistStartService.isRunOwnedByUser(draftRunId, userId)) {
+			model.addAttribute("msg", "접근 권한이 없습니다.");
+			model.addAttribute("historyBack", true);
+			return "usr/common/js";
+		}
+
+		// 상태 확인: DRAFT가 아니면(이미 SUBMITTED/DISCARDED) 새 흐름으로 넘긴다
+		String status = checklistStartService.getRunStatus(draftRunId, userId);
+		if (!"DRAFT".equalsIgnoreCase(status)) {
+			return "redirect:/usr/checklist/start?checklistId=" + checklistId + "&childId=" + childId;
+		}
+
+		Map<String, Object> draftInfo = checklistStartService.getDraftRunBasicInfo(draftRunId);
+
+		model.addAttribute("draftRunId",  draftRunId);
+		model.addAttribute("checklistId", checklistId);
+		model.addAttribute("childId",     childId);
+		model.addAttribute("draftInfo",   draftInfo);
+
+		return "usr/checklist/resumeOrNew";
+	}
+
+	// ────────────────────────────────────────────────────────────
+	// POST /usr/checklist/doDiscardAndNew
+	// 기존 DRAFT 폐기(answers 포함) → 새 DRAFT 생성 → 작성 화면으로 이동
+	// ────────────────────────────────────────────────────────────
+	@PostMapping("/usr/checklist/doDiscardAndNew")
+	public String doDiscardAndNew(
+			@RequestParam("draftRunId")  long draftRunId,
+			@RequestParam("checklistId") long checklistId,
+			@RequestParam("childId")     long childId,
+			HttpSession session, Model model) {
+
+		Long userId = toLong(session.getAttribute("loginedUserId"));
+		if (userId == null || userId <= 0) {
+			return "redirect:/usr/member/login";
+		}
+
+		// 소유권 확인
+		if (!checklistStartService.isRunOwnedByUser(draftRunId, userId)) {
+			model.addAttribute("msg", "접근 권한이 없습니다.");
+			model.addAttribute("historyBack", true);
+			return "usr/common/js";
+		}
+
+		long newRunId = checklistStartService.discardAllDraftsAndCreateNew(userId, childId, checklistId);
+
+		return "redirect:/usr/checklist/start?runId=" + newRunId;
 	}
 
 	// ────────────────────────────────────────────────────────────

@@ -58,6 +58,7 @@ public class UsrChildController {
 
 		model.addAttribute("selectedChildId", selectedChildId);
 		model.addAttribute("selectedChild", selectedChild);
+		model.addAttribute("loginedUserId", loginedUserId);
 
 		if (needSelect != null) {
 			model.addAttribute("needSelect", true);
@@ -67,7 +68,8 @@ public class UsrChildController {
 	}
 
 	@GetMapping("/usr/child/write")
-	public String showWrite() {
+	public String showWrite(HttpSession session, Model model) {
+		model.addAttribute("loginedUserId", getLoginedUserId(session));
 		return "usr/child/write";
 	}
 
@@ -107,6 +109,7 @@ public class UsrChildController {
 		}
 
 		model.addAttribute("child", child);
+		model.addAttribute("loginedUserId", loginedUserId);
 		return "usr/child/modify";
 	}
 

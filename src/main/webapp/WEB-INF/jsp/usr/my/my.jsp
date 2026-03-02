@@ -7,7 +7,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>내 정보 — CareRoute</title>
+  <title>내 정보 — LittleSteps</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
@@ -298,6 +298,7 @@
       <p style="font-size:13px;color:#bbb;">아이 프로필을 먼저 추가해 체크리스트를 시작해 보세요.</p>
       <div class="cta-bar" style="justify-content:center;margin-top:18px;">
         <a href="/usr/child/write" class="btn-cta btn-cta-primary">아이 프로필 추가 →</a>
+        <a href="/usr/child/list"  class="btn-cta btn-cta-outline">아이 프로필 관리</a>
         <a href="/usr/center/list" class="btn-cta btn-cta-outline">센터 둘러보기</a>
       </div>
     </div>
@@ -353,6 +354,7 @@
       <div class="cta-bar">
         <a href="/usr/checklist/start?checklistId=1<c:if test='${selectedChildId != 0}'>&amp;childId=${selectedChildId}</c:if>"
            class="btn-cta btn-cta-primary">새 체크리스트 시작 →</a>
+        <a href="/usr/child/list" class="btn-cta btn-cta-outline">아이 프로필 관리</a>
       </div>
     </div>
 

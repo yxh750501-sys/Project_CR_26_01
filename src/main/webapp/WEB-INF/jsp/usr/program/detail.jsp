@@ -5,11 +5,11 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8"/>
-  <title><c:out value="${post.title}"/> - CareRoute</title>
+  <title><c:out value="${post.title}"/> - LittleSteps</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; }
     body   { font-family: Arial, sans-serif; margin: 0; background: #f5f5f5; color: #333; }
-    .wrap  { max-width: 860px; margin: 40px auto; padding: 0 16px; }
+    .wrap  { max-width: 860px; margin: 20px auto; padding: 0 16px; }
     .card  { background: #fff; border: 1px solid #ddd; border-radius: 10px; padding: 32px 36px; }
     .nav   { font-size: 13px; margin-bottom: 14px; }
     .nav a { color: #4a90d9; text-decoration: none; }
@@ -46,6 +46,7 @@
   </style>
 </head>
 <body>
+<%@ include file="/WEB-INF/jsp/usr/common/header.jsp" %>
 <div class="wrap">
   <p class="nav"><a href="/usr/program/list">프로그램 게시판</a> &gt; 상세</p>
 

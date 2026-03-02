@@ -5,7 +5,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>CareRoute — 아동 발달 관찰 기록 & 지원 기관 찾기</title>
+  <title>LittleSteps — 아동 발달 관찰 기록 & 지원 기관 찾기</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;

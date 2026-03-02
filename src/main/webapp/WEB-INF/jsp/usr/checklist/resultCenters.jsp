@@ -7,9 +7,10 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <title>결과 + 치료기관 추천</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>결과 + 지원 기관 추천 - LittleSteps</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; background: #f9f9f9; }
+    body { font-family: Arial, sans-serif; margin: 0; background: #f9f9f9; }
     .box { border: 1px solid #ddd; padding: 16px; border-radius: 10px; margin-bottom: 14px; background: #fff; }
     h2 { margin: 0 0 10px 0; }
     h3 { margin: 0 0 8px 0; font-size: 15px; }
@@ -30,10 +31,11 @@
   </style>
 </head>
 <body>
+<%@ include file="/WEB-INF/jsp/usr/common/header.jsp" %>
+<div style="max-width:960px;margin:20px auto;padding:0 16px;">
 
 <div class="box">
-  <h2>체크리스트 결과 &amp; 치료기관 추천</h2>
-  <div class="muted">runId: <c:out value="${runId}" /></div>
+  <h2>체크리스트 결과 &amp; 지원 기관 추천</h2>
   <div class="topbar" style="margin-top:8px;">
     <a href="/usr/checklist/result?runId=${runId}">상세 결과 보기</a>
     <a href="/usr/child/list">아이 목록</a>
@@ -82,9 +84,9 @@
   </c:if>
 </div>
 
-<%-- ② 추천 도메인 + 치료타입 --%>
+<%-- ② 추천 도메인 + 지원 프로그램 --%>
 <div class="box">
-  <h2>추천 영역 &amp; 치료/프로그램</h2>
+  <h2>추천 영역 &amp; 지원 프로그램</h2>
 
   <div style="margin-bottom: 10px;">
     <b>우선 지원 권장 영역:</b>
@@ -102,7 +104,7 @@
   </div>
 
   <div>
-    <b>추천 치료/프로그램:</b>
+    <b>추천 지원 프로그램:</b>
     <c:if test="${empty therapyTypeCodes}">
       <span class="muted">데이터 없음 (domain_therapy_map 시드 확인)</span>
     </c:if>
@@ -117,10 +119,10 @@
   </div>
 </div>
 
-<%-- ③ 치료타입별 센터 블록 (BeforeActionInterceptor 주입: therapyCenterBlocks) --%>
+<%-- ③ 지원유형별 기관 블록 (BeforeActionInterceptor 주입: therapyCenterBlocks) --%>
 <c:if test="${not empty therapyCenterBlocks}">
   <div class="box">
-    <h2>치료타입별 기관 추천</h2>
+    <h2>지원 유형별 기관 추천</h2>
     <c:forEach items="${therapyCenterBlocks}" var="block">
       <div class="therapy-block">
         <h4>
@@ -185,10 +187,10 @@
   </div>
 </c:if>
 
-<%-- ④ 치료타입 블록 없을 때: centers fallback (ChecklistResultMapper 조회) --%>
+<%-- ④ 지원 유형 블록 없을 때: centers fallback (ChecklistResultMapper 조회) --%>
 <c:if test="${empty therapyCenterBlocks}">
   <div class="box">
-    <h2>추천 치료기관</h2>
+    <h2>추천 지원 기관</h2>
 
     <c:if test="${empty centers}">
       <div class="empty">
@@ -204,7 +206,7 @@
             <th>기관명</th>
             <th>지역</th>
             <th>주소 / 연락처</th>
-            <th>제공 치료</th>
+            <th>제공 서비스</th>
           </tr>
         </thead>
         <tbody>
@@ -245,5 +247,6 @@
   </div>
 </c:if>
 
+</div>
 </body>
 </html>

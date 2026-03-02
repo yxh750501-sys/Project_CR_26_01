@@ -6,9 +6,10 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <title>체크리스트 작성</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>체크리스트 작성 - LittleSteps</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; background: #f9f9f9; }
+    body { font-family: Arial, sans-serif; margin: 0; background: #f9f9f9; }
     .box { border: 1px solid #ddd; padding: 16px; border-radius: 10px; margin-bottom: 14px; background: #fff; }
     h2 { margin: 0 0 10px 0; }
     h3 { margin: 0 0 8px 0; font-size: 15px; color: #444; }
@@ -38,6 +39,8 @@
   </style>
 </head>
 <body>
+<%@ include file="/WEB-INF/jsp/usr/common/header.jsp" %>
+<div style="max-width:860px;margin:20px auto;padding:0 16px;">
 
 <div class="toast" id="toastMsg">임시저장 완료</div>
 <c:if test="${param.saved eq '1'}">
@@ -126,5 +129,6 @@
   </div>
 </form>
 
+</div>
 </body>
 </html>

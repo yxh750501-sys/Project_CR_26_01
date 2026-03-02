@@ -111,6 +111,7 @@ public class UsrChecklistStartController {
 		model.addAttribute("childId", childId);
 		model.addAttribute("answersMap", answersMap);
 		model.addAttribute("domainLabelMap", ChecklistDomain.getLabelMap());
+		model.addAttribute("loginedUserId", userId);
 		if ("1".equals(saved)) {
 			model.addAttribute("savedSuccess", true);
 		}
@@ -153,6 +154,7 @@ public class UsrChecklistStartController {
 		model.addAttribute("checklistId", checklistId);
 		model.addAttribute("childId",     childId);
 		model.addAttribute("draftInfo",   draftInfo);
+		model.addAttribute("loginedUserId", userId);
 
 		return "usr/checklist/resumeOrNew";
 	}

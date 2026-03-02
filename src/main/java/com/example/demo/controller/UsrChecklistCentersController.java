@@ -62,6 +62,7 @@ public class UsrChecklistCentersController {
 		model.addAttribute("centers", centers);
 		model.addAttribute("domainLabelMap", ChecklistDomain.getLabelMap());
 		model.addAttribute("therapyTypeLabelMap", TherapyTypeCode.getLabelMap());
+		model.addAttribute("loginedUserId", userId);
 
 		return "usr/checklist/resultCenters";
 	}

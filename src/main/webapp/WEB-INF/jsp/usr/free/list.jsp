@@ -5,7 +5,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8"/>
-  <title>자유게시판 - CareRoute</title>
+  <title>자유게시판 - LittleSteps</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; }
     body   { font-family: Arial, sans-serif; margin: 0; background: #f5f5f5; color: #333; }

@@ -6,7 +6,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8"/>
-  <title>프로그램 등록 - CareRoute</title>
+  <title>프로그램 등록 - LittleSteps</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; }
     body   { font-family: Arial, sans-serif; margin: 0; background: #f5f5f5; }

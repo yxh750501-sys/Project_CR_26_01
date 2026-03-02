@@ -43,6 +43,9 @@
 %>
 
 <%
+  request.setAttribute("loginedUserId", session.getAttribute("loginedUserId"));
+%>
+<%
   Object runsObj = request.getAttribute("runs");
   if(runsObj==null) runsObj = request.getAttribute("historyRuns");
   if(runsObj==null) runsObj = request.getAttribute("runList");
@@ -58,7 +61,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>체크리스트 히스토리</title>
+<title>체크리스트 히스토리 - LittleSteps</title>
 <style>
   body{ font-family: Arial, sans-serif; margin:0; padding:18px; background:#fafafa; }
   .wrap{ max-width:980px; margin:0 auto; }
@@ -74,6 +77,7 @@
 </style>
 </head>
 <body>
+<%@ include file="/WEB-INF/jsp/usr/common/header.jsp" %>
 <div class="wrap">
 
   <div class="card">

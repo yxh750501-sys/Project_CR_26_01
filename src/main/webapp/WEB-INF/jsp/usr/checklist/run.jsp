@@ -124,6 +124,9 @@
 %>
 
 <%
+  request.setAttribute("loginedUserId", session.getAttribute("loginedUserId"));
+%>
+<%
   Object run = request.getAttribute("run");
   List questions = (List)request.getAttribute("questions");
   Map answersMap = (Map)request.getAttribute("answersMap");
@@ -159,7 +162,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>체크리스트 진행</title>
+<title>체크리스트 진행 - LittleSteps</title>
 <style>
   body{ font-family: Arial, sans-serif; }
   .card{ margin:14px 0; padding:14px; border:1px solid #ddd; border-radius:12px; }
@@ -180,8 +183,9 @@
 </style>
 </head>
 <body>
-
-<h2>체크리스트 진행</h2>
+<%@ include file="/WEB-INF/jsp/usr/common/header.jsp" %>
+<div style="max-width:860px;margin:20px auto;padding:0 16px;">
+<h2 style="margin:0 0 16px;">체크리스트 진행</h2>
 
 <div class="card guide">
   <div class="gt">SCALE5 라벨 선택 기준(기회 10번 중 성공 횟수)</div>
@@ -197,9 +201,6 @@
   </div>
 </div>
 
-<div class="card">
-  <div>Run ID: <b><%= runId==0 ? "-" : runId %></b> <span class="badge">기능 5영역</span></div>
-</div>
 
 <form method="post" action="/usr/checklist/doSubmit">
   <input type="hidden" name="runId" value="<%= runId %>"/>
@@ -279,5 +280,6 @@
   <a href="/usr/child/list">아이 프로필 관리</a>
 </p>
 
+</div>
 </body>
 </html>

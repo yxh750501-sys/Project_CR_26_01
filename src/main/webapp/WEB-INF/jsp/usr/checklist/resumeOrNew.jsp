@@ -5,17 +5,16 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>체크리스트 시작</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>체크리스트 이어하기 - LittleSteps</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: Arial, sans-serif;
       background: #f5f7fa;
+      padding: 40px 20px;
       display: flex;
       justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      padding: 20px;
     }
     .card {
       background: #fff;
@@ -83,7 +82,7 @@
   </style>
 </head>
 <body>
-
+<%@ include file="/WEB-INF/jsp/usr/common/header.jsp" %>
 <div class="card">
   <div class="icon">📋</div>
   <h2>임시저장 내용이 있어요</h2>

@@ -71,7 +71,7 @@
 
 <nav class="site-nav">
   <div class="site-nav__inner">
-    <a href="/" class="site-nav__logo">CareRoute</a>
+    <a href="/" class="site-nav__logo"><img src="/img/littlesteps.png" alt="LittleSteps" style="height:26px;vertical-align:middle;margin-right:6px;">LittleSteps</a>
     <ul class="site-nav__links">
       <li><a href="/">홈</a></li>
       <li><a href="/usr/program/list">프로그램</a></li>

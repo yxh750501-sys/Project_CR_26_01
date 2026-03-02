@@ -50,11 +50,6 @@
 
 <div class="box">
   <h2><c:out value="${checklist.title}" /></h2>
-  <div class="muted">
-    runId: <c:out value="${runId}" /> /
-    checklistId: <c:out value="${checklist.id}" /> /
-    childId: <c:out value="${childId}" />
-  </div>
   <c:if test="${not empty checklist.description}">
     <div class="help" style="margin-top:6px;"><c:out value="${checklist.description}" /></div>
   </c:if>

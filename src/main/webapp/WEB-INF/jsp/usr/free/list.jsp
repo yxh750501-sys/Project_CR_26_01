@@ -35,7 +35,8 @@
   </style>
 </head>
 <body>
-<div class="wrap">
+<%@ include file="/WEB-INF/jsp/usr/common/header.jsp" %>
+<div class="wrap" style="margin-top:20px;">
   <p class="nav"><a href="/">홈</a> &gt; 자유게시판</p>
 
   <div class="hd">

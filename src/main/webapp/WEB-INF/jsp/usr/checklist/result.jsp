@@ -143,6 +143,7 @@
   </style>
 </head>
 <body>
+<%@ include file="/WEB-INF/jsp/usr/common/header.jsp" %>
 <div class="page-wrap">
 
   <%-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -274,14 +275,14 @@
        ③ 추천 치료기관 (추천 근거 포함)
        ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ --%>
   <div class="card">
-    <h2>추천 치료기관</h2>
+    <h2>추천 지원 기관</h2>
 
     <c:choose>
       <c:when test="${empty centers}">
         <div class="empty-state">
           <span class="icon">🏥</span>
-          <p>현재 매칭되는 치료기관이 없습니다.</p>
-          <p class="small">domain_therapy_map 또는 center_services 데이터를 확인해 주세요.</p>
+          <p>현재 조건에 맞는 지원 기관이 없습니다.</p>
+          <p class="small">다른 체크리스트를 제출하거나 센터 전체보기를 이용해 보세요.</p>
         </div>
       </c:when>
       <c:otherwise>
@@ -334,9 +335,9 @@
               </c:forEach>
             </c:if>
 
-            <%-- 제공 치료 태그 --%>
+            <%-- 제공 서비스 태그 --%>
             <c:if test="${not empty ctr.therapyTypes or not empty ctr.therapyTypeCodes}">
-              <span class="section-lbl">제공 치료</span>
+              <span class="section-lbl">제공 서비스</span>
               <c:if test="${not empty ctr.therapyTypes}">
                 <c:forEach items="${ctr.therapyTypes}" var="tt">
                   <span class="tag tag-therapy">

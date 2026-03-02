@@ -225,15 +225,10 @@
         가입일: <c:out value="${loginedUser.regDate}" />
       </p>
 
-      <%-- 프로필 사진 변경 폼 --%>
-      <form action="/usr/my/doUploadProfileImage" method="post"
-            enctype="multipart/form-data" class="profile-img-form">
-        <input type="file" name="profileImage" id="profileImageFile"
-               accept="image/jpeg,image/png,image/gif"
-               style="display:none;"
-               onchange="this.form.submit();" />
-        <label for="profileImageFile" class="btn-upload-img">📷 사진 변경</label>
-      </form>
+      <%-- 프로필 사진 변경: 준비 중 --%>
+      <div class="profile-img-form">
+        <span class="btn-upload-img" style="opacity:.5;cursor:default;">📷 사진 변경 (준비 중)</span>
+      </div>
     </div>
   </div>
 

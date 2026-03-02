@@ -102,6 +102,7 @@ public class UsrChecklistController {
 		model.addAttribute("recommendationSummary", recommendationSummary);
 		model.addAttribute("favoriteCenterIds", favoriteCenterIds);
 		model.addAttribute("consultationPrep", consultationPrep);
+		model.addAttribute("loginedUserId",   userId);
 
 		return "usr/checklist/result";
 	}

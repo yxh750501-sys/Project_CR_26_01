@@ -65,8 +65,7 @@
 
     <p class="section-title">첨부 파일</p>
     <div class="field">
-      <input type="file" name="files" multiple accept=".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.hwp,.zip" />
-      <span class="hint">파일당 10MB 이하 · 최대 5개 · 허용: jpg/png/gif/pdf/doc/xls/ppt/hwp/zip</span>
+      <span class="hint" style="color:#aaa;">파일 첨부 기능은 현재 준비 중입니다.</span>
     </div>
 
     <div class="btns">

@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.multipart.MultipartFile;
 
 import com.example.demo.constant.SessionConst;
 import com.example.demo.dto.RunSummaryDto;
@@ -78,6 +77,7 @@ public class UsrMyController {
         List<Center>        favoriteCenters = myPageService.getFavoriteCenters(userId);
 
         model.addAttribute("loginedUser",     user);
+        model.addAttribute("loginedUserId",   userId);
         model.addAttribute("children",        children);
         model.addAttribute("selectedChildId", childId);
         model.addAttribute("submittedRuns",   submittedRuns);
@@ -154,28 +154,9 @@ public class UsrMyController {
      * 프로필 사진 등록·변경.
      */
     @PostMapping("/doUploadProfileImage")
-    public String doUploadProfileImage(
-            @RequestParam("profileImage") MultipartFile file,
-            HttpSession session) {
-
-        Object raw = session.getAttribute(SessionConst.LOGINED_USER_ID);
-        if (raw == null) return "redirect:/usr/member/login";
-        long userId = ((Number) raw).longValue();
-
-        if (file == null || file.isEmpty()) {
-            return "redirect:/usr/my?error=" + encode("이미지를 선택해 주세요.");
-        }
-
-        try {
-            userService.updateProfileImage(userId, file);
-        } catch (IllegalArgumentException e) {
-            return "redirect:/usr/my?error=" + encode(e.getMessage());
-        } catch (Exception e) {
-            log.error("프로필 이미지 업로드 실패: userId={}", userId, e);
-            return "redirect:/usr/my?error=" + encode("이미지 업로드에 실패했습니다.");
-        }
-
-        return "redirect:/usr/my?msg=" + encode("프로필 사진이 변경되었습니다.");
+    public String doUploadProfileImage(HttpSession session) {
+        // 프로필 사진 변경 기능은 현재 준비 중입니다.
+        return "redirect:/usr/my?msg=" + encode("프로필 사진 변경 기능은 현재 준비 중입니다.");
     }
 
     // ── 내부 헬퍼 ────────────────────────────────────────────────

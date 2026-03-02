@@ -135,8 +135,7 @@
     </c:if>
 
     <div class="field">
-      <input type="file" name="files" multiple accept=".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.hwp,.zip" />
-      <span class="hint">새 파일 추가 (기존 파일 유지 · 총 5개 이하 · 파일당 10MB)</span>
+      <span class="hint" style="color:#aaa;">파일 첨부 기능은 현재 준비 중입니다.</span>
     </div>
 
     <div class="btns">

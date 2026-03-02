@@ -21,6 +21,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import com.example.demo.config.GlobalExceptionHandler;
 import com.example.demo.service.ChildService;
 import com.example.demo.service.MyPageService;
+import com.example.demo.service.UserService;
 import com.example.demo.vo.Child;
 
 /**
@@ -47,9 +48,12 @@ class UsrMyControllerTest {
     @Mock
     private ChildService childService;
 
+    @Mock
+    private UserService userService;
+
     @BeforeEach
     void setUp() {
-        UsrMyController controller = new UsrMyController(myPageService, childService);
+        UsrMyController controller = new UsrMyController(myPageService, childService, userService);
 
         mockMvc = MockMvcBuilders
                 .standaloneSetup(controller)

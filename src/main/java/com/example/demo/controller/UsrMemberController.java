@@ -6,6 +6,7 @@ import jakarta.validation.Valid;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.example.demo.constant.SessionConst;
 import com.example.demo.form.JoinForm;
@@ -29,6 +31,9 @@ public class UsrMemberController {
 
     private final UserService userService;
 
+    @Value("${google.oauth.client-id:}")
+    private String googleClientId;
+
     public UsrMemberController(UserService userService) {
         this.userService = userService;
     }
@@ -36,7 +41,10 @@ public class UsrMemberController {
     // ── 로그인 ───────────────────────────────────────────────────
 
     @GetMapping("/login")
-    public String showLogin() {
+    public String showLogin(Model model) {
+        if (googleClientId != null && !googleClientId.isBlank()) {
+            model.addAttribute("googleClientId", googleClientId);
+        }
         return "usr/member/login";
     }
 
@@ -57,6 +65,28 @@ public class UsrMemberController {
         session.setAttribute(SessionConst.LOGINED_USER_ROLE, user.getRole());
 
         // 로그인 성공 후 홈으로 이동
+        return "redirect:/";
+    }
+
+    // ── Google 로그인 ─────────────────────────────────────────────
+
+    /**
+     * POST /usr/member/doGoogleLogin
+     * Google Identity Services 가 프론트에서 발급한 id_token(credential) 을 받아
+     * 서버에서 검증 후 세션을 생성한다.
+     */
+    @PostMapping("/doGoogleLogin")
+    public String doGoogleLogin(@RequestParam("credential") String credential,
+                                HttpSession session,
+                                RedirectAttributes ra) {
+        User user = userService.loginOrRegisterWithGoogle(credential);
+        if (user == null) {
+            ra.addFlashAttribute("googleError",
+                    "Google 로그인에 실패했습니다. 잠시 후 다시 시도해 주세요.");
+            return "redirect:/usr/member/login";
+        }
+        session.setAttribute(SessionConst.LOGINED_USER_ID,   user.getId());
+        session.setAttribute(SessionConst.LOGINED_USER_ROLE, user.getRole());
         return "redirect:/";
     }
 

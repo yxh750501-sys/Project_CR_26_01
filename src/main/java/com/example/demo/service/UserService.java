@@ -1,5 +1,16 @@
 package com.example.demo.service;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.UUID;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -8,15 +19,23 @@ import org.springframework.web.multipart.MultipartFile;
 import com.example.demo.form.JoinForm;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.vo.User;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.servlet.http.HttpSession;
 
 @Service
 public class UserService {
 
+    private static final Logger log = LoggerFactory.getLogger(UserService.class);
+    private static final ObjectMapper objectMapper = new ObjectMapper();
+
     /** 세션 키 — 기존 코드 호환 유지 (SessionConst 와 동일 값) */
     public static final String SESSION_KEY_USER_ID   = "loginedUserId";
     public static final String SESSION_KEY_USER_ROLE = "loginedUserRole";
+
+    @Value("${google.oauth.client-id:}")
+    private String googleClientId;
 
     private final UserRepository        userRepository;
     private final BCryptPasswordEncoder passwordEncoder;
@@ -155,6 +174,86 @@ public class UserService {
         String storedName = fileStorageService.storeProfileImage(file);
         userRepository.updateProfileImage(userId, storedName);
         return storedName;
+    }
+
+    // ── Google OAuth ─────────────────────────────────────────────
+
+    /**
+     * Google id_token 검증 → DB 조회/생성 → User 반환.
+     * 실패 시 null 반환.
+     */
+    @Transactional
+    public User loginOrRegisterWithGoogle(String credential) {
+        GoogleUserInfo info = verifyGoogleToken(credential);
+        if (info == null) return null;
+
+        // 1. oauth_sub 로 기존 계정 조회
+        User user = userRepository.getUserByOauthSub("google", info.sub);
+        if (user != null) return user;
+
+        // 2. 동일 이메일의 기존 계정이 있으면 OAuth 연결
+        user = userRepository.getUserByEmail(info.email);
+        if (user != null) {
+            userRepository.linkOauth(user.getId(), "google", info.sub);
+            return user;
+        }
+
+        // 3. 신규 사용자 생성 (loginId = "google:" + sub)
+        String loginId  = "google:" + info.sub;
+        String dummyPw  = passwordEncoder.encode(UUID.randomUUID().toString());
+        String name     = (info.name != null && !info.name.isBlank()) ? info.name : info.email;
+        userRepository.createOauthUser(loginId, dummyPw, name, info.email, "google", info.sub);
+        return userRepository.getUserByOauthSub("google", info.sub);
+    }
+
+    /**
+     * Google tokeninfo 엔드포인트로 id_token 검증.
+     * 성공 시 GoogleUserInfo, 실패 시 null.
+     */
+    private GoogleUserInfo verifyGoogleToken(String idToken) {
+        if (idToken == null || idToken.isBlank()) return null;
+        if (googleClientId == null || googleClientId.isBlank()) {
+            log.warn("google.oauth.client-id 가 설정되지 않았습니다.");
+            return null;
+        }
+        try {
+            String urlStr = "https://oauth2.googleapis.com/tokeninfo?id_token="
+                          + URLEncoder.encode(idToken, StandardCharsets.UTF_8.name());
+            HttpURLConnection conn = (HttpURLConnection) new URL(urlStr).openConnection();
+            conn.setConnectTimeout(5000);
+            conn.setReadTimeout(5000);
+
+            if (conn.getResponseCode() != 200) return null;
+
+            try (BufferedReader br = new BufferedReader(
+                    new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
+                StringBuilder sb = new StringBuilder();
+                String line;
+                while ((line = br.readLine()) != null) sb.append(line);
+                JsonNode node = objectMapper.readTree(sb.toString());
+
+                // aud 가 우리 클라이언트 ID 와 일치해야 함
+                if (!googleClientId.equals(node.path("aud").asText(""))) return null;
+
+                String sub   = node.path("sub").asText(null);
+                String email = node.path("email").asText(null);
+                String name  = node.path("name").asText(null);
+
+                if (sub == null || email == null) return null;
+                return new GoogleUserInfo(sub, email, name);
+            }
+        } catch (Exception e) {
+            log.warn("Google token 검증 실패: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    /** Google 토큰에서 추출한 사용자 정보 */
+    private static class GoogleUserInfo {
+        final String sub, email, name;
+        GoogleUserInfo(String sub, String email, String name) {
+            this.sub = sub; this.email = email; this.name = name;
+        }
     }
 
     // ── 세션 헬퍼 ────────────────────────────────────────────────

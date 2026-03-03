@@ -212,3 +212,31 @@ SET @s = IF(@i = 0,
     'ALTER TABLE checklist_answers ADD UNIQUE KEY uq_answer_run_question (run_id, question_id)',
     'SET @dummy := 0');
 PREPARE stmt FROM @s; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- ============================================================
+-- [SECTION 6] users: Google OAuth 컬럼 추가
+-- ============================================================
+
+-- 6-1. oauth_provider ('google' 등)
+SET @c = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+          WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'oauth_provider');
+SET @s = IF(@c = 0,
+    'ALTER TABLE users ADD COLUMN oauth_provider VARCHAR(20) NULL COMMENT ''google / kakao 등''',
+    'SET @dummy := 0');
+PREPARE stmt FROM @s; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- 6-2. oauth_sub (OAuth 공급자의 고유 사용자 ID)
+SET @c = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+          WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'oauth_sub');
+SET @s = IF(@c = 0,
+    'ALTER TABLE users ADD COLUMN oauth_sub VARCHAR(100) NULL',
+    'SET @dummy := 0');
+PREPARE stmt FROM @s; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- 6-3. (oauth_provider, oauth_sub) 유니크 인덱스
+SET @i = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS
+          WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND INDEX_NAME = 'uq_users_oauth');
+SET @s = IF(@i = 0,
+    'ALTER TABLE users ADD UNIQUE KEY uq_users_oauth (oauth_provider, oauth_sub)',
+    'SET @dummy := 0');
+PREPARE stmt FROM @s; EXECUTE stmt; DEALLOCATE PREPARE stmt;

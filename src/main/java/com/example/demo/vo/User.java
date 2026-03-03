@@ -17,6 +17,10 @@ public class User {
     /** 소속 기관명 (선택) */
     private String orgName;
     private String regDate;
+    /** OAuth 공급자: google 등 (일반 가입 시 null) */
+    private String oauthProvider;
+    /** OAuth 공급자가 발급한 고유 사용자 ID */
+    private String oauthSub;
 
     public long getId() { return id; }
     public void setId(long id) { this.id = id; }
@@ -53,4 +57,10 @@ public class User {
 
     public String getRegDate() { return regDate; }
     public void setRegDate(String regDate) { this.regDate = regDate; }
+
+    public String getOauthProvider() { return oauthProvider; }
+    public void setOauthProvider(String oauthProvider) { this.oauthProvider = oauthProvider; }
+
+    public String getOauthSub() { return oauthSub; }
+    public void setOauthSub(String oauthSub) { this.oauthSub = oauthSub; }
 }

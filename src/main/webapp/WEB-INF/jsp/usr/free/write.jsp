@@ -65,7 +65,10 @@
 
     <p class="section-title">첨부 파일</p>
     <div class="field">
-      <span class="hint" style="color:#aaa;">파일 첨부 기능은 현재 준비 중입니다.</span>
+      <label>파일 선택 <span class="hint">(최대 5개 · 각 10MB 이하 · jpg·png·pdf·hwp·doc·zip 등)</span></label>
+      <input type="file" name="files" multiple
+             accept=".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.hwp,.zip" />
+      <span class="hint">여러 파일: Ctrl+클릭(Mac: Cmd+클릭)으로 선택</span>
     </div>
 
     <div class="btns">

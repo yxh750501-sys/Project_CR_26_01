@@ -90,4 +90,71 @@
     SELECT LAST_INSERT_ID()
   </select>
 
+  <!-- ── OAuth ──────────────────────────────────────────────── -->
+
+  <!-- email 로 사용자 조회 -->
+  <select id="getUserByEmail" resultType="com.example.demo.vo.User">
+    SELECT
+      id            AS id,
+      login_id      AS loginId,
+      login_pw      AS loginPw,
+      name          AS name,
+      email         AS email,
+      phone         AS phone,
+      profile_image AS profileImage,
+      `ROLE`        AS role,
+      member_type   AS memberType,
+      display_role  AS displayRole,
+      org_name      AS orgName,
+      reg_date      AS regDate,
+      oauth_provider AS oauthProvider,
+      oauth_sub      AS oauthSub
+    FROM users
+    WHERE email = #{email}
+    LIMIT 1
+  </select>
+
+  <!-- oauth_provider + oauth_sub 로 사용자 조회 -->
+  <select id="getUserByOauthSub" resultType="com.example.demo.vo.User">
+    SELECT
+      id            AS id,
+      login_id      AS loginId,
+      login_pw      AS loginPw,
+      name          AS name,
+      email         AS email,
+      phone         AS phone,
+      profile_image AS profileImage,
+      `ROLE`        AS role,
+      member_type   AS memberType,
+      display_role  AS displayRole,
+      org_name      AS orgName,
+      reg_date      AS regDate,
+      oauth_provider AS oauthProvider,
+      oauth_sub      AS oauthSub
+    FROM users
+    WHERE oauth_provider = #{oauthProvider}
+      AND oauth_sub      = #{oauthSub}
+    LIMIT 1
+  </select>
+
+  <!-- OAuth 신규 사용자 등록 -->
+  <insert id="createOauthUser">
+    INSERT INTO users
+      (login_id, login_pw, name, email, phone,
+       `ROLE`, member_type, display_role, org_name,
+       oauth_provider, oauth_sub, reg_date)
+    VALUES
+      (#{loginId}, #{loginPw}, #{name}, #{email}, NULL,
+       'GUARDIAN', 'GUARDIAN', NULL, NULL,
+       #{oauthProvider}, #{oauthSub}, NOW())
+  </insert>
+
+  <!-- 기존 계정에 OAuth 연결 -->
+  <update id="linkOauth">
+    UPDATE users
+    SET oauth_provider = #{oauthProvider},
+        oauth_sub      = #{oauthSub}
+    WHERE id = #{id}
+  </update>
+
 </mapper>

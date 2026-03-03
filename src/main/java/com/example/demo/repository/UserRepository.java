@@ -48,4 +48,26 @@ public interface UserRepository {
                            @Param("profileImage") String profileImage);
 
     long getLastInsertId();
+
+    // ── OAuth ────────────────────────────────────────────────
+
+    /** email로 사용자 조회 (Google 로그인 연동 시 기존 계정 탐색) */
+    User getUserByEmail(@Param("email") String email);
+
+    /** OAuth 공급자+서브로 사용자 조회 */
+    User getUserByOauthSub(@Param("oauthProvider") String oauthProvider,
+                           @Param("oauthSub")      String oauthSub);
+
+    /** OAuth 신규 사용자 등록 (비밀번호는 BCrypt 더미값) */
+    int createOauthUser(@Param("loginId")       String loginId,
+                        @Param("loginPw")       String loginPw,
+                        @Param("name")          String name,
+                        @Param("email")         String email,
+                        @Param("oauthProvider") String oauthProvider,
+                        @Param("oauthSub")      String oauthSub);
+
+    /** 기존 계정에 OAuth 정보 연결 */
+    int linkOauth(@Param("id")            long   id,
+                  @Param("oauthProvider") String oauthProvider,
+                  @Param("oauthSub")      String oauthSub);
 }

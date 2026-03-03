@@ -61,6 +61,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
 			.excludePathPatterns(
 				"/usr/member/login",
 				"/usr/member/doLogin",
+				"/usr/member/doGoogleLogin",
 				"/usr/member/join",
 				"/usr/member/doJoin",
 				// /usr/home → "/" 리다이렉트 경유, 비로그인도 허용
